@@ -75,57 +75,53 @@ namespace RSBuild
 		{
 			StringDictionary folders = new StringDictionary();
 
-			if (_DataSources != null && _DataSources.Count > 0)
+			if (_DataSources.Count > 0)
 			{
 				foreach(DataSource source in _DataSources.Values)
 				{
-					if (source.Publish)
+					if (source.Publish
+                        && source.TargetFolder != null
+                        && !folders.ContainsKey(source.TargetFolder))
 					{
-						if (source.TargetFolder != null)
-						{
-							if (!folders.ContainsKey(source.TargetFolder))
-							{
-								folders.Add(source.TargetFolder, null);
-							}
-						}
+                        folders.Add(source.TargetFolder, source.TargetFolder);
 					}
 				}
 			}
-			if (_ReportGroups != null && _ReportGroups.Length > 0)
+
+            if (_ReportGroups.Length > 0)
 			{
 				foreach(ReportGroup reportGroup in _ReportGroups)
 				{
-					if (reportGroup != null && reportGroup.TargetFolder != null)
+					if (reportGroup != null 
+                        && reportGroup.TargetFolder != null
+                        && !folders.ContainsKey(reportGroup.TargetFolder))
 					{
-						if (!folders.ContainsKey(reportGroup.TargetFolder))
-						{
-							folders.Add(reportGroup.TargetFolder, null);
-						}
+                        folders.Add(reportGroup.TargetFolder, reportGroup.TargetFolder);
 					}
 				}
 			}
 
 			foreach(IWSWrapper wsWrapper in _WSWrappers.Values)
 			{
-				foreach(string key in folders.Keys)
+				foreach(string folder in folders.Values)
 				{
-					string[] arr = key.Split(new char[]{'/', '\\'});
+					string[] folderSegments = folder.Split(new char[]{'/', '\\'});
 					StringBuilder location = new StringBuilder();
 
-					foreach (string folder in arr)
+					foreach (string folderSegment in folderSegments)
 					{
-						if (folder.Length > 0)
+						if (folderSegment.Length > 0)
 						{
 							try
 							{
-								wsWrapper.CreateFolder(folder, (location.Length==0)? "/":location.ToString());
-								Logger.LogMessage(string.Format("Folder created: {0} at {1}", folder, location.ToString()));
+								wsWrapper.CreateFolder(folderSegment, location.Length == 0 ? "/" : location.ToString());
+								Logger.LogMessage(string.Format("Folder created: {0} at {1}", folderSegment, location.ToString()));
 							}
 							catch(Exception)
 							{
 								//Logger.LogException("PublishTask::CreateFolders", e.Message);
 							}
-							location.AppendFormat("/{0}", folder);
+							location.AppendFormat("/{0}", folderSegment);
 						}
 					}
 				}
@@ -163,7 +159,7 @@ namespace RSBuild
         /// </summary>
 		private void PublishReports()
 		{
-			if (_ReportGroups != null && _ReportGroups.Length > 0)
+			if (_ReportGroups.Length > 0)
 			{
 				foreach(ReportGroup reportGroup in _ReportGroups)
 				{
