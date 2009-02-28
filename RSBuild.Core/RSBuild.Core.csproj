@@ -1,7 +1,7 @@
-﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
-    <ProductVersion>8.0.50727</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{3ED10CFF-893B-47C0-9C29-A3CCB0C51ED4}</ProjectGuid>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -26,6 +26,7 @@
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
     <SignAssembly>true</SignAssembly>
+    <OldToolsVersion>2.0</OldToolsVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>bin\Debug\</OutputPath>
@@ -47,7 +48,7 @@
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
-    <DebugType>full</DebugType>
+    <DebugType>pdbonly</DebugType>
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -60,7 +61,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <DocumentationFile>
     </DocumentationFile>
-    <DebugSymbols>false</DebugSymbols>
+    <DebugSymbols>true</DebugSymbols>
     <FileAlignment>4096</FileAlignment>
     <NoStdLib>false</NoStdLib>
     <NoWarn>
@@ -70,7 +71,7 @@
     <RemoveIntegerChecks>false</RemoveIntegerChecks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningLevel>4</WarningLevel>
-    <DebugType>none</DebugType>
+    <DebugType>pdbonly</DebugType>
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
@@ -98,6 +99,7 @@
     <Compile Include="Entities\CacheOption.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Entities\ReportCredential.cs" />
     <Compile Include="Entities\DataSource.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -113,9 +115,11 @@
     <Compile Include="Entities\ReportServerInfo.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="IWSWrapper.cs" />
     <Compile Include="Logger.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="ReportingServices2005\ReportingService2005.cs" />
     <Compile Include="ReportingServices\ActiveState.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -336,19 +340,20 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="WSWrapper.cs">
-      <SubType>Component</SubType>
     </Compile>
+    <Compile Include="WSWrapper2005.cs" />
     <None Include="..\RSBuild.config">
       <Link>RSBuild.config</Link>
     </None>
     <None Include="..\RSBuild.snk">
       <Link>RSBuild.snk</Link>
     </None>
+    <None Include="ReportingServices\vssver.scc" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>if exist "$(TargetDir)$(TargetName).config" del "$(TargetDir)$(TargetName).config" /q /f
-copy "$(SolutionDir)$(SolutionName).config" "$(TargetDir)$(TargetName).config" /y</PreBuildEvent>
+    <PreBuildEvent>
+    </PreBuildEvent>
     <PostBuildEvent>
     </PostBuildEvent>
   </PropertyGroup>

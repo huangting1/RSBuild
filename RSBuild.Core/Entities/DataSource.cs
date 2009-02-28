@@ -1,10 +1,8 @@
-using System;
-
-using Microsoft.SqlServer.ReportingServices;
-
 namespace RSBuild
 {
-	/// <summary>
+    using System;
+
+    /// <summary>
 	/// Represents a data source.
 	/// </summary>
 	[Serializable]
@@ -15,7 +13,7 @@ namespace RSBuild
 		private string _Password;
 		private string _ConnectionString;
 		private string _RSConnectionString;
-		private CredentialRetrievalEnum _CredentialRetrieval;
+		private ReportCredential _CredentialRetrieval;
 		private bool _WindowsCredentials;
 		private bool _Publish;
 		private bool _Overwrite;
@@ -62,7 +60,7 @@ namespace RSBuild
         /// Gets the credential retrieval enum.
         /// </summary>
         /// <value>The credential retrieval enum.</value>
-		public CredentialRetrievalEnum CredentialRetrieval
+		public ReportCredential CredentialRetrieval
 		{
 			get
 			{
@@ -207,12 +205,12 @@ namespace RSBuild
 				}
 			}
 
-			_CredentialRetrieval = CredentialRetrievalEnum.Integrated;
+			_CredentialRetrieval = ReportCredential.Integrated;
 			if (credentialRetrieval != null)
 			{
 				try
 				{
-					_CredentialRetrieval = (CredentialRetrievalEnum)Enum.Parse(typeof(CredentialRetrievalEnum), credentialRetrieval, true);
+					_CredentialRetrieval = (ReportCredential)Enum.Parse(typeof(ReportCredential), credentialRetrieval, true);
 				}
 				catch(ArgumentException e)
 				{

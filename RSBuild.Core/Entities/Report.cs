@@ -1,14 +1,10 @@
-using System;
-using System.IO;
-using System.Xml;
-using System.Xml.XPath;
-using System.Collections.Specialized;
-
-using Microsoft.SqlServer.ReportingServices;
-
 namespace RSBuild
 {
-	/// <summary>
+    using System;
+    using System.IO;
+    using System.Xml;
+
+    /// <summary>
 	/// Represents a report.
 	/// </summary>
 	[Serializable]
@@ -85,9 +81,7 @@ namespace RSBuild
 
 			if (cacheTime > 0)
 			{
-				TimeExpiration timeExp = new TimeExpiration();
-				timeExp.Minutes = cacheTime;
-				_CacheOption = new CacheOption(timeExp);
+				_CacheOption = new CacheOption(cacheTime);
 			}
 		}
 

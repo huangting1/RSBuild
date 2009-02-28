@@ -1,29 +1,29 @@
 namespace RSBuild
 {
-	using System;
-    using Microsoft.SqlServer.ReportingServices;
+    using System;
+    using Microsoft.SqlServer.ReportingServices2005;
 
     /// <summary>
     /// Proxy wrapper.
     /// </summary>
-	public class WSWrapper2003 : IWSWrapper
-	{
-        private const string SERVICE_NAME = "ReportService.asmx";
-        private ReportingService _proxy;
+    public class WSWrapper2005 : IWSWrapper
+    {
+        private static string SERVICE_NAME = "ReportService2005.asmx";
+        private ReportingService2005 _proxy;
 
-		// Methods
+        // Methods
         /// <summary>
         /// Initializes a new instance of the <see cref="WSWrapper"/> class.
         /// </summary>
         /// <param name="reportServer">The report server.</param>
-		private WSWrapper2003(ReportingService proxy)
-		{
+        private WSWrapper2005(ReportingService2005 proxy)
+        {
             _proxy = proxy;
-		}
+        }
 
         public static bool TryCreate(ReportServerInfo reportServer, out IWSWrapper result, out Exception exception)
         {
-            ReportingService proxy = new ReportingService()
+            ReportingService2005 proxy = new ReportingService2005()
             {
                 Url = reportServer.GetServiceUrl(SERVICE_NAME),
                 Timeout = reportServer.Timeout ?? -1,
@@ -33,7 +33,7 @@ namespace RSBuild
             try
             {
                 proxy.ListSecureMethods();
-                result = new WSWrapper2003(proxy);
+                result = new WSWrapper2005(proxy);
                 exception = null;
                 return true;
             }
@@ -84,7 +84,7 @@ namespace RSBuild
 
         public void CreateReport(ReportGroup reportGroup, Report report)
         {
-			byte[] definition = report.Process(reportGroup.TargetFolder, reportGroup.DataSource);
+            byte[] definition = report.Process(reportGroup.TargetFolder, reportGroup.DataSource);
             if (definition == null) return;
 
             Warning[] warnings = _proxy.CreateReport(
@@ -108,7 +108,7 @@ namespace RSBuild
             }
 
             if (report.CacheOption != null
-                && report.CacheOption.CacheReport 
+                && report.CacheOption.CacheReport
                 && report.CacheOption.ExpirationMinutes != null)
             {
                 _proxy.SetCacheOptions(
@@ -117,5 +117,5 @@ namespace RSBuild
                     new TimeExpiration() { Minutes = report.CacheOption.ExpirationMinutes.Value });
             }
         }
-	}
+    }
 }

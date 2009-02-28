@@ -1,7 +1,3 @@
-using System;
-
-using Microsoft.SqlServer.ReportingServices;
-
 namespace RSBuild
 {
 	/// <summary>
@@ -10,7 +6,7 @@ namespace RSBuild
 	public class CacheOption
 	{
 		private bool _CacheReport;
-		private ExpirationDefinition _ExpirationDef;
+        private int? _ExpirationMinutes;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="CacheOption"/> class.
@@ -22,7 +18,7 @@ namespace RSBuild
         /// Initializes a new instance of the <see cref="CacheOption"/> class.
         /// </summary>
         /// <param name="expirationDef">The expiration definition.</param>
-		public CacheOption(ExpirationDefinition expirationDef) : this(true, expirationDef)
+		public CacheOption(int expirationMinutes) : this(true, expirationMinutes)
 		{}
 
         /// <summary>
@@ -30,10 +26,10 @@ namespace RSBuild
         /// </summary>
         /// <param name="cacheReport">If set to <c>true</c> report should be cached.</param>
         /// <param name="expirationDef">The expiration definition.</param>
-		public CacheOption(bool cacheReport, ExpirationDefinition expirationDef)
+        public CacheOption(bool cacheReport, int? expirationMinutes)
 		{
 			_CacheReport = cacheReport;
-			_ExpirationDef = expirationDef;
+            _ExpirationMinutes = expirationMinutes;
 		}
 
         /// <summary>
@@ -52,11 +48,11 @@ namespace RSBuild
         /// Gets the expiration definition.
         /// </summary>
         /// <value>The expiration definition.</value>
-		public ExpirationDefinition ExpirationDefinition
+		public int? ExpirationMinutes
 		{
 			get
 			{
-				return _ExpirationDef;
+				return _ExpirationMinutes;
 			}
 		}
 	}

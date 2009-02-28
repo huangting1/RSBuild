@@ -1,17 +1,16 @@
-using System;
-using System.Diagnostics;
-using System.Reflection;
-using System.IO;
-using System.Globalization;
-using System.Xml;
-using System.Collections;
-using System.Collections.Specialized;
-using System.Text;
-using System.Text.RegularExpressions;
-
 namespace RSBuild
 {
-	/// <summary>
+    using System;
+    using System.Collections;
+    using System.Collections.Specialized;
+    using System.Globalization;
+    using System.IO;
+    using System.Reflection;
+    using System.Text;
+    using System.Text.RegularExpressions;
+    using System.Xml;
+
+    /// <summary>
 	/// The config settings.
 	/// </summary>
 	public sealed class Settings
@@ -100,37 +99,36 @@ namespace RSBuild
 							string name = ProcessGlobals(n0.Value);
 							XmlNode rsHost =node.Attributes["Host"];
 							XmlNode rsPath =node.Attributes["Path"];
-							if (rsHost != null && rsPath != null)
+                            if (rsHost != null && rsPath != null)
 							{
-								string text0 = "http", text1= null, text2 = null, text3 = null;
-								XmlNode rsProtocol =node.Attributes["Protocol"];
-								if (rsProtocol != null)
-								{
-									text0 = ProcessGlobals(rsProtocol.Value);
-								}
-								XmlNode rsTimeout =node.Attributes["Timeout"];
-								if (rsTimeout != null)
-								{
-									text1 = ProcessGlobals(rsTimeout.Value);
-								}
-								XmlNode rsUserName =node.Attributes["UserName"];
-								if (rsUserName != null && rsUserName.Value.Trim().Length > 0)
-								{
-									text2 = ProcessGlobals(rsUserName.Value);
-								}
-								XmlNode rsPassword =node.Attributes["Password"];
-								if (rsPassword != null)
-								{
-									text3 = ProcessGlobals(rsPassword.Value);
-								}
+                                XmlNode rsProtocol =node.Attributes["Protocol"];
+                                string protocol = rsProtocol != null
+                                    ? ProcessGlobals(rsProtocol.Value)
+                                    : "http";
 
+                                XmlNode rsTimeout = node.Attributes["Timeout"];
+                                string timeout = rsTimeout != null
+                                    ? ProcessGlobals(rsTimeout.Value)
+                                    : null;
+
+                                XmlNode rsUserName = node.Attributes["UserName"];
+                                string userName = rsUserName != null && rsUserName.Value.Trim().Length > 0
+                                    ? ProcessGlobals(rsUserName.Value)
+                                    : null;
+								
+                                XmlNode rsPassword =node.Attributes["Password"];
+                                string password = rsPassword != null
+                                    ? ProcessGlobals(rsPassword.Value)
+                                    : null;
+
+                                ReportServerInfo rsInfo = new ReportServerInfo(name, protocol, ProcessGlobals(rsHost.Value), ProcessGlobals(rsPath.Value), timeout, userName, password);
 								if (_ReportServers.ContainsKey(name))
 								{
-									_ReportServers[name] = new ReportServerInfo(name, text0, ProcessGlobals(rsHost.Value), ProcessGlobals(rsPath.Value), text1, text2, text3);
+                                    _ReportServers[name] = rsInfo;
 								}
 								else
 								{
-									_ReportServers.Add(name, new ReportServerInfo(name, text0, ProcessGlobals(rsHost.Value), ProcessGlobals(rsPath.Value), text1, text2, text3));
+									_ReportServers.Add(name, rsInfo);
 								}
 							}
 						}
