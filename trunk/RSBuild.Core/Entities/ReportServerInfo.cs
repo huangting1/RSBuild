@@ -1,4 +1,5 @@
 using System;
+using System.Net;
 
 namespace RSBuild
 {
@@ -12,7 +13,7 @@ namespace RSBuild
 		private string _Protocol;
 		private string _Host;
 		private string _Path;
-		private int _Timeout;
+		private int? _Timeout;
 		private string _UserName;
 		private string _Password;
 
@@ -68,7 +69,7 @@ namespace RSBuild
         /// Gets the timeout.
         /// </summary>
         /// <value>The timeout.</value>
-		public int Timeout
+		public int? Timeout
 		{
 			get
 			{
@@ -101,15 +102,24 @@ namespace RSBuild
 		}
 
         /// <summary>
+        /// Gets the service URL base.
+        /// </summary>
+        /// <value>The service URL.</value>
+        public string ServiceBaseUrl
+        {
+            get
+            {
+                return string.Format("{0}://{1}/{2}/", this.Protocol, this.Host, this.Path);
+            }
+        }
+
+        /// <summary>
         /// Gets the service URL.
         /// </summary>
         /// <value>The service URL.</value>
-		public string ServiceUrl
+		public string GetServiceUrl(string serviceName)
 		{
-			get
-			{
-				return string.Format("{0}://{1}/{2}/ReportService.asmx", _Protocol, _Host, _Path);
-			}
+            return this.ServiceBaseUrl + serviceName;
 		}
 
         /// <summary>
@@ -132,17 +142,47 @@ namespace RSBuild
 			_Password = password;
 			try
 			{
-				_Timeout = Convert.ToInt32(timeout, 10);
-				if (_Timeout < 0)
+				_Timeout = string.IsNullOrEmpty(timeout) 
+                    ? default(int?)
+                    : Convert.ToInt32(timeout, 10) * 0x3e8;
+				if (_Timeout.Value < 0)
 				{
 					throw new Exception("Invalid timeout value");
 				}
-				_Timeout *= 0x3e8;
 			}
 			catch (Exception e)
 			{
 				Logger.LogException("ReportServerInfo", e);
 			}
 		}
-	}
+
+        public ICredentials CreateCredentials(string serviceName)
+        {
+            if (this.UserName == null)
+            {
+                return CredentialCache.DefaultCredentials;
+            }
+
+            string username = this.UserName;
+            string domain = string.Empty;
+
+            int index = username.IndexOf('\\');
+            if (index > 0)
+            {
+                domain = username.Substring(0, index);
+                username = username.Substring(index + 1);
+                if (domain == ".")
+                {
+                    domain = string.Empty;
+                }
+            }
+
+            NetworkCredential credential = new NetworkCredential(username, this.Password, domain);
+            Uri uri = new Uri(this.GetServiceUrl(serviceName));
+            CredentialCache cache = new CredentialCache();
+            cache.Add(uri, "NTLM", credential);
+            cache.Add(uri, "BASIC", credential);
+            return cache;
+        }
+    }
 }

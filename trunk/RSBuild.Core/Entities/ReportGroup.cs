@@ -1,15 +1,8 @@
-using System;
-using System.IO;
-using System.Xml;
-using System.Xml.XPath;
-using System.Collections;
-using System.Collections.Specialized;
-
-using Microsoft.SqlServer.ReportingServices;
-
 namespace RSBuild
 {
-	/// <summary>
+    using System;
+
+    /// <summary>
 	/// Represents a report group.
 	/// </summary>
 	[Serializable]

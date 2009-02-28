@@ -1,5 +1,3 @@
-using System;
-
 namespace RSBuild
 {
 	/// <summary>
@@ -39,19 +37,19 @@ namespace RSBuild
 			// need refactoring
 			
 			LogSectionHeader("Database Installation");
-			DBTask task2 = new DBTask();
-			if (task2.Validate())
+			DBTask dbTask = new DBTask();
+			if (dbTask.Validate())
 			{
-				task2.Execute();
+				dbTask.Execute();
 			}
 
 			LogSectionHeader("Reports Installation");
-			PublishTask task1 = new PublishTask();
-			if (task1.Validate())
-			{
-				task1.Execute();
-			}
-		}
+            PublishTask publishTask = new PublishTask();
+            if (publishTask.Validate())
+            {
+                publishTask.Execute();
+            }
+        }
 
         /// <summary>
         /// Logs the banner.

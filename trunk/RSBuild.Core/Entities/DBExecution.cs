@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Specialized;
-
 namespace RSBuild
 {
-	/// <summary>
+    using System;
+    using System.Collections.Specialized;
+
+    /// <summary>
 	/// 
 	/// </summary>
 	[Serializable]
