@@ -126,15 +126,7 @@ namespace RSBuild
         /// <returns></returns>
 		public static byte[] StringToByteArray(string input)
 		{
-			Byte[] data = new Byte[input.Length];
-			char[] char1;
-
-			char1 = input.ToCharArray();
-			for(int i=0; i<input.Length; i++)
-			{
-				data[i] = System.Convert.ToByte(char1[i]);
-			}
-			return data;
+			return Encoding.UTF8.GetBytes(input);
 		}
 
         /// <summary>
