@@ -357,9 +357,6 @@
     <Compile Include="WSWrapper2003.cs">
     </Compile>
     <Compile Include="WSWrapper2005.cs" />
-    <None Include="..\RSBuild.config">
-      <Link>RSBuild.config</Link>
-    </None>
     <None Include="..\RSBuild.snk">
       <Link>RSBuild.snk</Link>
     </None>
