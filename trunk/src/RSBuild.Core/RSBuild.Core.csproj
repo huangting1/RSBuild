@@ -1,0 +1,402 @@
+﻿<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="3.5">
+  <PropertyGroup>
+    <ProjectType>Local</ProjectType>
+    <ProductVersion>9.0.30729</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{3ED10CFF-893B-47C0-9C29-A3CCB0C51ED4}</ProjectGuid>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ApplicationIcon>
+    </ApplicationIcon>
+    <AssemblyKeyContainerName>
+    </AssemblyKeyContainerName>
+    <AssemblyName>RSBuild.Core</AssemblyName>
+    <AssemblyOriginatorKeyFile>..\RSBuild.snk</AssemblyOriginatorKeyFile>
+    <DefaultClientScript>JScript</DefaultClientScript>
+    <DefaultHTMLPageLayout>Grid</DefaultHTMLPageLayout>
+    <DefaultTargetSchema>IE50</DefaultTargetSchema>
+    <DelaySign>false</DelaySign>
+    <OutputType>Library</OutputType>
+    <RootNamespace>RSBuild.Core</RootNamespace>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <StartupObject>
+    </StartupObject>
+    <FileUpgradeFlags>
+    </FileUpgradeFlags>
+    <UpgradeBackupLocation>
+    </UpgradeBackupLocation>
+    <SignAssembly>true</SignAssembly>
+    <OldToolsVersion>2.0</OldToolsVersion>
+    <PublishUrl>http://localhost/RSBuild.Core/</PublishUrl>
+    <Install>true</Install>
+    <InstallFrom>Web</InstallFrom>
+    <UpdateEnabled>true</UpdateEnabled>
+    <UpdateMode>Foreground</UpdateMode>
+    <UpdateInterval>7</UpdateInterval>
+    <UpdateIntervalUnits>Days</UpdateIntervalUnits>
+    <UpdatePeriodically>false</UpdatePeriodically>
+    <UpdateRequired>false</UpdateRequired>
+    <MapFileExtensions>true</MapFileExtensions>
+    <ApplicationRevision>0</ApplicationRevision>
+    <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
+    <IsWebBootstrapper>true</IsWebBootstrapper>
+    <UseApplicationTrust>false</UseApplicationTrust>
+    <BootstrapperEnabled>true</BootstrapperEnabled>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <OutputPath>bin\Debug\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>false</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>pdbonly</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <OutputPath>bin\Release\</OutputPath>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <BaseAddress>285212672</BaseAddress>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <ConfigurationOverrideFile>
+    </ConfigurationOverrideFile>
+    <DefineConstants>TRACE</DefineConstants>
+    <DocumentationFile>
+    </DocumentationFile>
+    <DebugSymbols>true</DebugSymbols>
+    <FileAlignment>4096</FileAlignment>
+    <NoStdLib>false</NoStdLib>
+    <NoWarn>
+    </NoWarn>
+    <Optimize>true</Optimize>
+    <RegisterForComInterop>false</RegisterForComInterop>
+    <RemoveIntegerChecks>false</RemoveIntegerChecks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningLevel>4</WarningLevel>
+    <DebugType>pdbonly</DebugType>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="System">
+      <Name>System</Name>
+    </Reference>
+    <Reference Include="System.Data">
+      <Name>System.Data</Name>
+    </Reference>
+    <Reference Include="System.Web.Services">
+      <Name>System.Web.Services</Name>
+    </Reference>
+    <Reference Include="System.Xml">
+      <Name>System.XML</Name>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\SharedAssemblyInfo.cs">
+      <Link>SharedAssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="Dispatcher.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Entities\CacheOption.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Entities\ReportCredential.cs" />
+    <Compile Include="Entities\DataSource.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Entities\DBExecution.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Entities\Report.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Entities\ReportGroup.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Entities\ReportServerInfo.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="IWSWrapper.cs" />
+    <Compile Include="Logger.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices2005\ReportingService2005.cs" />
+    <Compile Include="ReportingServices\ActiveState.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\BatchHeader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\BooleanOperatorEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\CatalogItem.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ConditionEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\CredentialRetrievalEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\DailyRecurrence.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\DataRetrievalPlan.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\DataSetDefinition.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\DataSource.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\DataSourceCredentials.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\DataSourceDefinition.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\DataSourceDefinitionOrReference.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\DataSourcePrompt.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\DataSourceReference.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\DaysOfWeekSelector.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Event.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ExecutionSettingEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ExpirationDefinition.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Extension.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ExtensionParameter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ExtensionSettings.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ExtensionTypeEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Field.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\InvalidDataSourceReference.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ItemNamespaceEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ItemNamespaceHeader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ItemTypeEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Job.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\JobActionEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\JobStatusEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\JobTypeEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\MinuteRecurrence.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\MonthlyDOWRecurrence.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\MonthlyRecurrence.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\MonthsOfYearSelector.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\NoSchedule.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ParameterFieldReference.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ParameterStateEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ParameterTypeEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ParameterValue.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ParameterValueOrFieldReference.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Policy.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Property.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\QueryDefinition.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\RecurrencePattern.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ReportHistorySnapshot.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ReportingService.cs">
+      <SubType>Component</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ReportParameter.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Role.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Schedule.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ScheduleDefinition.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ScheduleDefinitionOrReference.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ScheduleExpiration.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ScheduleReference.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ScheduleStateEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\SearchCondition.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\SensitivityEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ServerInfoHeader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\SessionHeader.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Subscription.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Task.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\TimeExpiration.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\ValidValue.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\Warning.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\WeeklyRecurrence.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ReportingServices\WeekNumberEnum.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Settings.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tasks\DBTask.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tasks\PublishTask.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Tasks\Task.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utilities\DBHelper.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Utilities\Util.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="WSWrapper2003.cs">
+    </Compile>
+    <Compile Include="WSWrapper2005.cs" />
+    <None Include="..\RSBuild.config">
+      <Link>RSBuild.config</Link>
+    </None>
+    <None Include="..\RSBuild.snk">
+      <Link>RSBuild.snk</Link>
+    </None>
+    <None Include="ReportingServices\vssver.scc" />
+  </ItemGroup>
+  <ItemGroup>
+    <BootstrapperPackage Include="Microsoft.Net.Client.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework Client Profile</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.2.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 2.0 %28x86%29</ProductName>
+      <Install>true</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.0">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.0 %28x86%29</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+    <BootstrapperPackage Include="Microsoft.Net.Framework.3.5.SP1">
+      <Visible>False</Visible>
+      <ProductName>.NET Framework 3.5 SP1</ProductName>
+      <Install>false</Install>
+    </BootstrapperPackage>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>
+    </PreBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
+  </PropertyGroup>
+</Project>
