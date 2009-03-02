@@ -1,0 +1,1 @@
+msbuild /target:Publish /property:UserName=%1 /property:Password=%2 RSBuild.proj 
