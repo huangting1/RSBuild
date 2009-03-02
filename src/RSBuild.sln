@@ -4,6 +4,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RSBuild", "RSBuild.csproj",
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RSBuild.Core", "RSBuild.Core\RSBuild.Core.csproj", "{3ED10CFF-893B-47C0-9C29-A3CCB0C51ED4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Build", "Build", "{78106C9D-B2F3-46D2-B79D-63B07823C052}"
+	ProjectSection(SolutionItems) = preProject
+		..\RSBuild.proj = ..\RSBuild.proj
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
