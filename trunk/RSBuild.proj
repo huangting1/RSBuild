@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Project DefaultTargets="Deliver" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <UsingTask AssemblyFile="$(ProjectDir)lib\codeplex\CodePlex.WebServices.Client.dll" TaskName="CodePlex.WebServices.Client.Tasks.CreateRelease" />
+  <UsingTask AssemblyFile="$(ProjectDir)lib\codeplex\CodePlex.WebServices.Client.dll" TaskName="CodePlex.WebServices.Client.Tasks.UploadFiles" />
+  <UsingTask AssemblyFile="$(ProjectDir)lib\msbuild-extensionpack\MSBuild.ExtensionPack.JSharp.dll" TaskName="MSBuild.ExtensionPack.Compression.Zip" />
+  <UsingTask AssemblyFile="$(ProjectDir)lib\msbuild-extensionpack\MSBuild.ExtensionPack.dll" TaskName="MSBuild.ExtensionPack.Framework.AssemblyInfo"/>
+  <UsingTask AssemblyFile="$(ProjectDir)lib\msbuild-extensionpack\MSBuild.ExtensionPack.dll" TaskName="MSBuild.ExtensionPack.Framework.DateAndTime"/>
+
+  <PropertyGroup>
+    <ProjectName>RSBuild</ProjectName>
+    <ProductCompany>Microsoft Corporation</ProductCompany>
+    <ProductCopyright>(C)2005 Microsoft Corporation</ProductCopyright>
+    <ProductDescription>SQL Server Reporting Service Build &amp; Deployment Utility</ProductDescription>
+    <Configuration>Release</Configuration>
+
+    <DocumentDir>$(ProjectDir)doc\</DocumentDir>
+    <SourceDir>$(ProjectDir)src\</SourceDir>
+    <OutputDir>$(ProjectDir)build\bin\$(Configuration)\</OutputDir>
+  </PropertyGroup>
+
+  <Target Name="Version">
+    <PropertyGroup>
+      <AssemblyMajorVersion>1</AssemblyMajorVersion>
+      <AssemblyMinorVersion>1</AssemblyMinorVersion>
+      <AssemblyBuildNumber>0</AssemblyBuildNumber>
+      <AssemblyRevision>*</AssemblyRevision>
+      <AssemblyBuildNumberType>NoIncrement</AssemblyBuildNumberType>
+      <AssemblyRevisionType>AutoIncrement</AssemblyRevisionType>
+      <AssemblyRevisionFormat>0</AssemblyRevisionFormat>
+    </PropertyGroup>
+    
+    <AssemblyInfo 
+        AssemblyInfoFiles="$(SourceDir)SharedAssemblyInfo.cs"
+        AssemblyMajorVersion="$(AssemblyMajorVersion)"
+        AssemblyMinorVersion="$(AssemblyMinorVersion)"
+        AssemblyBuildNumber="$(AssemblyBuildNumber)"
+        AssemblyRevision="$(AssemblyRevision)"
+        AssemblyBuildNumberType="$(AssemblyBuildNumberType)"
+        AssemblyBuildNumberFormat="$(AssemblyBuildNumberFormat)"
+        AssemblyRevisionType="$(AssemblyRevisionType)"
+        AssemblyRevisionFormat="$(AssemblyRevisionFormat)"
+        AssemblyFileMajorVersion="$(AssemblyMajorVersion)"
+        AssemblyFileMinorVersion="$(AssemblyMinorVersion)"
+        AssemblyFileBuildNumber="$(AssemblyBuildNumber)"
+        AssemblyFileRevision="$(AssemblyRevision)"
+        AssemblyFileBuildNumberType="$(AssemblyBuildNumberType)"
+        AssemblyFileBuildNumberFormat="$(AssemblyBuildNumberFormat)"
+        AssemblyFileRevisionType="$(AssemblyRevisionType)"
+        AssemblyFileRevisionFormat="$(AssemblyRevisionFormat)"
+        AssemblyConfiguration="$(Configuration)"
+        AssemblyCompany="$(ProductCompany)"
+        AssemblyCopyright="$(ProductCopyright)"
+        AssemblyProduct="$(ProjectName)"
+        AssemblyDescription="$(ProductDescription)">
+      <Output TaskParameter="MaxAssemblyVersion" PropertyName="ProductVersion"/>
+    </AssemblyInfo>
+  </Target>
+
+  <Target Name="Clean">
+    <ItemGroup>
+      <DelFiles Include="$(OutputDir)\**\$(Configuration)\**\*.*" />
+    </ItemGroup>
+    
+    <Delete Files="@(DelFiles)" />
+    <MSBuild Projects="$(SourceDir)RSBuild.sln" Targets="Clean" Properties="Configuration=$(Configuration)" />
+  </Target>
+  
+  <Target Name="Build" DependsOnTargets="Clean;Version">
+    <ItemGroup>
+      <BuildBinFiles Include="$(SourceDir)**\bin\$(Configuration)\*.*" Exclude="$(SourceDir)**\*.vshost.*" />
+      <BuildDocFiles Include="$(DocumentDir)**\*.*" Exclude="$(DocumentDir).svn\**\*.*"/>
+    </ItemGroup>
+    
+    <MakeDir Directories="$(OutputDir)" />
+    <MSBuild Projects="$(SourceDir)RSBuild.sln" Targets="Build" Properties="Configuration=$(Configuration)" />
+    <Copy SourceFiles="@(BuildBinFiles)" DestinationFolder="$(OutputDir)" />
+    <Copy SourceFiles="@(BuildDocFiles)" DestinationFolder="$(OutputDir)doc" />
+  </Target>
+
+  <Target Name="Deliver" DependsOnTargets="Build">
+    <PropertyGroup>
+      <ArtifactDir>$(ProjectDir)build\artifacts\$(Configuration)\</ArtifactDir>
+      <ArtifactVersion>$(AssemblyMajorVersion).$(AssemblyMinorVersion).$(AssemblyBuildNumber)</ArtifactVersion>
+      <BinArtifactName>$(ProjectName)-bin-$(ArtifactVersion).zip</BinArtifactName>
+      <DocArtifactName>$(ProjectName)-doc-$(ArtifactVersion).zip</DocArtifactName>
+      <SrcArtifactName>$(ProjectName)-src-$(ArtifactVersion).zip</SrcArtifactName>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ZipBinFiles Include="$(OutputDir)**\*.*" />
+      <ZipDocFiles Include="$(OutputDir)doc\**\*.*" />
+      <ZipSrcFiles Include="$(SourceDir)**\*.*" Exclude="$(SourceDir)**\bin\**\*.*;$(SourceDir)**\obj\**\*;$(SourceDir)**\*.suo;$(SourceDir)**\*.user;$(SourceDir)**\.svn\**\*.*" />
+    </ItemGroup>
+    
+    <MakeDir Directories="$(ArtifactDir)" />
+    <Zip TaskAction="Create" CompressFiles="@(ZipBinFiles)" RemoveRoot="$(OutputDir)" ZipFileName="$(ArtifactDir)$(BinArtifactName)"/>
+    <Zip TaskAction="Create" CompressFiles="@(ZipDocFiles)" RemoveRoot="$(OutputDir)doc\" ZipFileName="$(ArtifactDir)$(DocArtifactName)"/>
+    <Zip TaskAction="Create" CompressFiles="@(ZipSrcFiles)" RemoveRoot="$(SourceDir)" ZipFileName="$(ArtifactDir)$(SrcArtifactName)"/>
+  </Target>
+  
+  <Target Name="Publish" DependsOnTargets="Deliver">
+    <Error Condition="('$(UserName)'=='') Or ('$(Password)'=='')" 
+      Text=" To publish new release to CodePlex, invoke this build file with command line 'msbuild /target:Publish /property:UserName=[MyCodePlexUserName] /property:Password=[MyCodePlexPassword] RSBuild.proj', where [MyCodePlexUserName] is a CodePlex user id with developer or coordinator priviliges in RSBuild project and [MyCodePlexPassword] is the associated password." />
+    
+    <PropertyGroup>
+      <ReleaseName>$(ArtifactVersion)</ReleaseName>
+      <IsNewRelease>false</IsNewRelease>
+      <IsDefaultRelease>false</IsDefaultRelease>
+      <ShowToPublic>false</ShowToPublic>
+      <ShowOnHomePage>false</ShowOnHomePage>
+      <ReleaseStatus>Planned</ReleaseStatus>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Artifact Include="$(ArtifactDir)$(BinArtifactName)">
+        <FileType>RuntimeBinary</FileType>
+      </Artifact>
+      <Artifact Include="$(ArtifactDir)$(DocArtifactName)">
+        <FileType>Documentation</FileType>
+      </Artifact>
+      <Artifact Include="$(ArtifactDir)$(SrcArtifactName)">
+        <FileType>SourceCode</FileType>
+      </Artifact>
+    </ItemGroup>
+
+    <DateAndTime TaskAction="Get" Format="yyyy-MM-dd">
+      <Output TaskParameter="Result" PropertyName="ReleaseDate" />
+    </DateAndTime>
+
+    <CreateRelease Condition="$(IsNewRelease)"
+      ProjectName="$(ProjectName)"
+      ReleaseName="$(ReleaseName)"
+      IsDefaultRelease="$(IsDefaultRelease)"
+      ShowToPublic="$(ShowToPublic)"
+      ShowOnHomePage="$(ShowOnHomePage)"
+      Description="$(ProjectName) $(Version)"
+      ReleaseDate="$(ReleaseDate)"
+      ReleaseStatus="$(ReleaseStatus)"
+      UserName="$(UserName)"
+      Password="$(Password)" 
+    />
+
+    <UploadFiles
+      ProjectName="$(ProjectName)"
+      ReleaseName="$(ReleaseName)"
+      ReleaseFiles="@(Artifact)"
+      UserName="$(UserName)"
+      Password="$(Password)" 
+    />
+  </Target>
+</Project>
