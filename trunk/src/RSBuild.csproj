@@ -92,7 +92,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="SharedAssemblyInfo.cs" />
-    <None Include="RSBuild.config" />
     <None Include="RSBuild.snk" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
