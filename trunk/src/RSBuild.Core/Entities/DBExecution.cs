@@ -42,7 +42,7 @@ namespace RSBuild
 				_Files = new StringCollection();
 				foreach (string file in files)
 				{
-					_Files.Add(string.Format("{0}{1}", Settings.CurrentDiretory, file.Trim()));
+					_Files.Add(string.Format("{0}{1}", Settings.CurrentDirectory, file.Trim()));
 				}
 			}
 		}

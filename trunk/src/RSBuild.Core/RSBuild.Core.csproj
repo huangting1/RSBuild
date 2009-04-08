@@ -17,7 +17,7 @@
     <DefaultTargetSchema>IE50</DefaultTargetSchema>
     <DelaySign>false</DelaySign>
     <OutputType>Library</OutputType>
-    <RootNamespace>RSBuild.Core</RootNamespace>
+    <RootNamespace>RSBuild</RootNamespace>
     <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
     <StartupObject>
     </StartupObject>
@@ -361,6 +361,7 @@
       <Link>RSBuild.snk</Link>
     </None>
     <None Include="ReportingServices\vssver.scc" />
+    <EmbeddedResource Include="RSBuild.xsd" />
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include="Microsoft.Net.Client.3.5">

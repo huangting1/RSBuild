@@ -13,7 +13,7 @@ namespace RSBuild
 		{
 			if (args != null && args.Length > 0)
 			{
-				Settings.ConfigFilePath = args[0];
+				Settings.SettingsFilePath = args[0];
 			}
 		}
 

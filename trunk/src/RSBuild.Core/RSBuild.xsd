@@ -1,0 +1,362 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema id="RSBuild" elementFormDefault="unqualified" attributeFormDefault="unqualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:element name="Settings" type="Settings" />
+  
+  <xs:complexType name="Settings" mixed="false">
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="Globals" minOccurs="0" maxOccurs="1" type="Globals" />
+      <xs:element name="ReportServers" minOccurs="1" maxOccurs="1" type="ReportServers" />
+      <xs:element name="DataSources" minOccurs="1" maxOccurs="1" type="DataSources" />
+      <xs:element name="Reports" minOccurs="1" maxOccurs="1" type="Reports" />
+      <xs:element name="DBExecutions" minOccurs="0" maxOccurs="1" type="DBExecutions" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Globals" mixed="false">
+    <xs:annotation>
+      <xs:documentation>
+        Set of global RSBuild variables. The name and value pairs of these
+        variables can be used in RSBuild tasks. For example, if the ReportServerName 
+        variable is defined in the Globals, you can use ${ReportServerName} wherever 
+        you want to reuse its value.
+      </xs:documentation>
+    </xs:annotation> 
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="Global" type="Global" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Global" mixed="true">
+    <xs:annotation>
+      <xs:documentation>
+        RSBuild global variable definition.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="Name" type="xs:ID" use="required" />
+  </xs:complexType>
+
+  <xs:complexType name="ReportServers" mixed="false">
+    <xs:annotation>
+      <xs:documentation>
+        Set of target report servers.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="ReportServer" type="ReportServer" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ReportServer" mixed="false">
+    <xs:annotation>
+      <xs:documentation>Target report server for report deployment.</xs:documentation>
+    </xs:annotation>
+    <xs:attribute name="Name" type="xs:ID" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Report server identifier.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="Protocol" default="http">
+      <xs:annotation>
+        <xs:documentation>
+          The protocol which the report service is using. It should be either http or https. Default value is http.
+        </xs:documentation>
+      </xs:annotation>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="http" />
+          <xs:enumeration value="https" />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:attribute>
+    <xs:attribute name="Host" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Host name of the report server.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="Path" type="xs:string" default="reportserver">
+      <xs:annotation>
+        <xs:documentation>
+          Virtual path the report server is using to serve requests. Default value is 'reportserver'.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="Timeout" type="xs:nonNegativeInteger" default="0">
+      <xs:annotation>
+        <xs:documentation>
+          Specifies the number of seconds that elapse before the connection to the 
+          server times out. A value of 0 specifies that the connection never times out.
+          Default value is 0.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:anyAttribute namespace="##other" />
+  </xs:complexType>
+
+  <xs:complexType name="DataSources" mixed="false">
+    <xs:annotation>
+      <xs:documentation>
+        Set of data sources for reports and/or database scripts.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="DataSource" type="DataSource" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DataSource" mixed="false">
+    <xs:annotation>
+      <xs:documentation>Data source for reports and/or database scripts.</xs:documentation>
+    </xs:annotation>
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="ConnectionString" minOccurs="1" maxOccurs="1">
+        <xs:annotation>
+          <xs:documentation>
+            The connection string for a data source.
+          </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:minLength value="10" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
+      <xs:element name="CredentialRetrieval" minOccurs="1" maxOccurs="1" default="Integrated">
+        <xs:annotation>
+          <xs:documentation>
+            One of the Prompt / Store / Integrated / None values, indicating the way in which the 
+          </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="Prompt" />
+            <xs:enumeration value="Store" />
+            <xs:enumeration value="Integrated" />
+            <xs:enumeration value="None" />
+            <xs:minLength value="1" />
+          </xs:restriction> 
+        </xs:simpleType>
+      </xs:element>
+      <xs:sequence minOccurs="0" maxOccurs="1">
+        <xs:element name="WindowsCredentials" type="Boolean" minOccurs="0" maxOccurs="1" default="true">
+          <xs:annotation>
+            <xs:documentation>
+              Indicates whether the report server passes user-provided or stored credentials as Windows 
+              credentials when connecting to a data source.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="UserName" type="xs:string" minOccurs="1" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>
+              The user name that the report server uses to connect to a data source.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+        <xs:element name="Password" type="xs:string" minOccurs="1" maxOccurs="1">
+          <xs:annotation>
+            <xs:documentation>
+              The password that the report server uses to connect to a data source.
+            </xs:documentation>
+          </xs:annotation>
+        </xs:element>
+      </xs:sequence>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:ID" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Name of the DataSource.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="Publish" type="Boolean" default="true">
+      <xs:annotation>
+        <xs:documentation>
+          Indicates if this DataSource will be published to report server. Default value is true.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="Overwrite" type="Boolean" default="false">
+      <xs:annotation>
+        <xs:documentation>
+          Indicates if this DataSource when published to report server will overwrite existing 
+          DataSource with the same name. Default value is false.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="TargetFolder" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          The target folder where the data source will be published on report server.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="ReportServer" type="xs:IDREF" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Identifier of target report server where the data source will be published to.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:anyAttribute namespace="##other" />
+  </xs:complexType>
+
+  <xs:complexType name="Reports" mixed="false">
+    <xs:annotation>
+      <xs:documentation>
+        Set of reports to be published to report server.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="ReportGroup" type="ReportGroup" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ReportGroup" mixed="false">
+    <xs:annotation>
+      <xs:documentation>
+        Group of reports to be deployed to same report server folder and using same data source.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="Report" type="Report" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Name of the ReportGroup.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="DataSourceName" type="xs:IDREF" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Name of the DataSource which all the reports under the ReportGroup will be using.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="TargetFolder" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          The target folder where all the report under the ReportGroup will be installed 
+          under on report server.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="ReportServer" type="xs:IDREF" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          The target report server where all the report under the ReportGroup will be 
+          published to.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="CacheTime" type="xs:integer">
+      <xs:annotation>
+        <xs:documentation>
+          The number of minutes that passes before a cached report expires. This setting applies 
+          to all reports in the current group if not otherwise specified by the Report. If not 
+          specified or specified using a number below zero, cache option will not be set.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:anyAttribute namespace="##other" />
+  </xs:complexType>
+
+  <xs:complexType name="Report" mixed="false">
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="FilePath" minOccurs="1" maxOccurs="1" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Relative path to the report's .RDL file (relative to location of RSBuild.exe).
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="Name" type="xs:string" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          Name of the Report.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="CollapsedHeight" type="xs:string">
+      <xs:annotation>
+        <xs:documentation>
+          When specified, RSBuild will try to modify the report’s body height using the given value. 
+          The value should be in unit of inches.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:attribute name="CacheTime" type="xs:int">
+      <xs:annotation>
+        <xs:documentation>
+          The number of minutes that passes before a cached report expires. This setting can overwrite 
+          the CacheTime setting in ReportGroup. If not specified, the report will inherit the setting 
+          from ReportGroup. If specified using a number below zero, cache option will not be set.
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:anyAttribute namespace="##other" />
+  </xs:complexType>
+
+  <xs:complexType name="DBExecutions" mixed="false">
+    <xs:annotation>
+      <xs:documentation>
+        Set of database scripts to be executed against data sources.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="DBExecution" type="DBExecution" minOccurs="1" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="DBExecution" mixed="false">
+    <xs:annotation>
+      <xs:documentation>
+        Set of database scripts to be executed against a common data source.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="DBFilePath" minOccurs="1" maxOccurs="unbounded" type="xs:string">
+        <xs:annotation>
+          <xs:documentation>
+            Name of the DataSource which database scripts will be run against.
+            The relative path to the database script file. (Relative to RSBuild.exe’s location)
+          </xs:documentation>
+        </xs:annotation>
+      </xs:element>
+    </xs:sequence>
+    <xs:attribute name="DataSourceName" type="xs:IDREF" use="required">
+      <xs:annotation>
+        <xs:documentation>
+          The relative path to the database script file (relative to RSBuild.exe’s location).
+        </xs:documentation>
+      </xs:annotation>
+    </xs:attribute>
+    <xs:anyAttribute namespace="##other" />
+  </xs:complexType>
+
+  <xs:simpleType name="Boolean">
+    <xs:annotation>
+      <xs:documentation>
+        Boolean type for backwards compatibility with bool values in rsbuild config files that 
+        predate this schema.
+      </xs:documentation>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:boolean" />
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:enumeration value="True" />
+          <xs:enumeration value="False" />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+</xs:schema>
