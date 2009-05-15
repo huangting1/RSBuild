@@ -22,7 +22,7 @@
     <PropertyGroup>
       <AssemblyMajorVersion>1</AssemblyMajorVersion>
       <AssemblyMinorVersion>1</AssemblyMinorVersion>
-      <AssemblyBuildNumber>1</AssemblyBuildNumber>
+      <AssemblyBuildNumber>2</AssemblyBuildNumber>
       <AssemblyRevision>*</AssemblyRevision>
       <AssemblyBuildNumberType>NoIncrement</AssemblyBuildNumberType>
       <AssemblyRevisionType>AutoIncrement</AssemblyRevisionType>
