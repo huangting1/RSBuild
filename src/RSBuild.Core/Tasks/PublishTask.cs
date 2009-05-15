@@ -61,7 +61,7 @@ namespace RSBuild
                 }
                 else
                 {
-                    Logger.LogMessage(string.Format("PublishTask::Validate", exception.Message));
+                    Logger.LogException("PublishTask::Validate", exception.Message);
                     return false;
                 }
 			}
