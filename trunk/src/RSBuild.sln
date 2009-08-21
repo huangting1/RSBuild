@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 10.00
 # Visual Studio 2008
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RSBuild", "RSBuild.csproj", "{74A15F0D-D732-4072-82A6-B52D5A3852A9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RSBuild.Console", "RSBuild.Console\RSBuild.Console.csproj", "{74A15F0D-D732-4072-82A6-B52D5A3852A9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RSBuild.Core", "RSBuild.Core\RSBuild.Core.csproj", "{3ED10CFF-893B-47C0-9C29-A3CCB0C51ED4}"
 EndProject
