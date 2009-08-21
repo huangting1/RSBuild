@@ -16,50 +16,77 @@ namespace RSBuild
     /// </summary>
     public sealed class Settings
     {
-        private static readonly string _CurrentDirectory;
-        private static readonly Assembly _Assembly;
-        private static Hashtable _ReportServers;
-        private static Hashtable _DataSources;
-        private static ReportGroup[] _ReportGroups;
-        private static DBExecution[] _DBExecutions;
-        private static StringDictionary _DBConnections;
-        private static StringDictionary _GlobalVariables;
-        private static string _SettingsFilePath;
-        private static readonly Regex GlobalsRegex = new Regex(@"(?<g>\${(?<k>[^}]+)})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        #region Static fields/properties
 
-        /// <summary>
-        /// Initializes the <see cref="Settings"/> class.
-        /// </summary>
-        static Settings()
+        private readonly Regex GlobalsRegex = new Regex(@"(?<g>\${(?<k>[^}]+)})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+
+        public static Assembly DefaultAssembly
         {
-            _CurrentDirectory = Environment.CurrentDirectory;
-            _Assembly = Assembly.GetEntryAssembly();
-            if (_Assembly == null)
-            {
-                _Assembly = Assembly.GetCallingAssembly();
-            }
-            _SettingsFilePath = string.Format("{0}{1}.config", CurrentDirectory, _Assembly.GetName().Name);
+            get { return Assembly.GetEntryAssembly() ?? Assembly.GetCallingAssembly(); }
         }
 
-        /// <summary>
-        /// Inits this instance.
-        /// </summary>
-        /// <returns></returns>
-        public static bool Init()
+        public static Settings Load()
+        {
+            return Load(null);
+        }
+
+        public static Settings Load(string settingsFilePath)
+        {
+            string settingsDir = string.IsNullOrEmpty(settingsFilePath) 
+                ? null 
+                : Path.GetDirectoryName(settingsFilePath);
+            string settingsFileName = string.IsNullOrEmpty(settingsFilePath) 
+                ? null
+                : Path.GetFileName(settingsFilePath);
+
+            if (string.IsNullOrEmpty(settingsDir))
+            {
+                settingsDir = Environment.CurrentDirectory;
+            }
+            if (string.IsNullOrEmpty(settingsFileName))
+            {
+                settingsFilePath = Path.Combine(settingsDir, DefaultAssembly.GetName().Name + ".config");
+            }
+            
+            return new Settings(settingsFilePath);
+        }
+
+        #endregion
+
+        #region Instance fields
+
+        private readonly string _settingsDir;
+        
+        private Hashtable _reportServers;
+        private Hashtable _dataSources;
+        private ReportGroup[] _reportGroups;
+        private DBExecution[] _dbExecutions;
+        private StringDictionary _dbConnections;
+        private StringDictionary _globalVariables;
+
+        #endregion
+
+        #region Constructor(s)
+
+        private Settings(string settingsFilePath)
         {
             try
             {
-                Logger.LogException("Settings", string.Format("Loading RSBuild settings from '{0}'", SettingsFilePath));
-                XmlDocument d = LoadSettings();
+                _settingsDir = Path.GetDirectoryName(settingsFilePath);
+                Logger.LogException("Settings", string.Format("Loading RSBuild settings from '{0}'", settingsFilePath));
+                XmlDocument d = LoadSettings(settingsFilePath);
                 ReadSettings(d);
-                return true;
             }
             catch (Exception e)
             {
                 Logger.LogException("Settings", e);
-                return false;
+                throw;
             }
         }
+
+        #endregion
+
+        #region Private methods
 
         private static XmlSchema LoadSettingsSchema()
         {
@@ -70,7 +97,7 @@ namespace RSBuild
             }
         }
 
-        private static XmlDocument LoadSettings()
+        private XmlDocument LoadSettings(string settingsFilePath)
         {
             XmlSchemaSet xmlSchemas = new XmlSchemaSet { };
             xmlSchemas.Add(LoadSettingsSchema());
@@ -97,7 +124,7 @@ namespace RSBuild
                 if (e.Severity == XmlSeverityType.Error) errorCount++;
             };
 
-            using (FileStream fileStream = File.OpenRead(SettingsFilePath))
+            using (FileStream fileStream = File.OpenRead(settingsFilePath))
             using (XmlReader xmlReader = XmlReader.Create(fileStream, xmlReaderSettings))
             {
                 XmlDocument xmlDocument = new XmlDocument();
@@ -115,11 +142,11 @@ namespace RSBuild
         }
 
 
-        private static void ReadSettings(XmlDocument d)
+        private void ReadSettings(XmlDocument d)
         {
             // Globals
             XmlNodeList list5 = d.SelectNodes("//Settings/Globals/Global");
-            _GlobalVariables = new StringDictionary();
+            _globalVariables = new StringDictionary();
 
             if (list5 != null)
             {
@@ -128,13 +155,13 @@ namespace RSBuild
                     XmlNode key = node.Attributes["Name"];
                     if (key != null)
                     {
-                        if (_GlobalVariables.ContainsKey(key.Value))
+                        if (_globalVariables.ContainsKey(key.Value))
                         {
-                            _GlobalVariables[key.Value] = node.InnerText;
+                            _globalVariables[key.Value] = node.InnerText;
                         }
                         else
                         {
-                            _GlobalVariables.Add(key.Value, node.InnerText);
+                            _globalVariables.Add(key.Value, node.InnerText);
                         }
                     }
                 }
@@ -144,7 +171,7 @@ namespace RSBuild
             XmlNodeList list6 = d.SelectNodes("//Settings/ReportServers/ReportServer");
             if (list6 != null)
             {
-                _ReportServers = new Hashtable();
+                _reportServers = new Hashtable();
                 foreach (XmlNode node in list6)
                 {
                     XmlNode n0 = node.Attributes["Name"];
@@ -176,13 +203,13 @@ namespace RSBuild
                                 : null;
 
                             ReportServerInfo rsInfo = new ReportServerInfo(name, protocol, ProcessGlobals(rsHost.Value), ProcessGlobals(rsPath.Value), timeout, userName, password);
-                            if (_ReportServers.ContainsKey(name))
+                            if (_reportServers.ContainsKey(name))
                             {
-                                _ReportServers[name] = rsInfo;
+                                _reportServers[name] = rsInfo;
                             }
                             else
                             {
-                                _ReportServers.Add(name, rsInfo);
+                                _reportServers.Add(name, rsInfo);
                             }
                         }
                     }
@@ -193,8 +220,8 @@ namespace RSBuild
             XmlNodeList list1 = d.SelectNodes("//Settings/DataSources/DataSource");
             if (list1 != null)
             {
-                _DataSources = new Hashtable();
-                _DBConnections = new StringDictionary();
+                _dataSources = new Hashtable();
+                _dbConnections = new StringDictionary();
                 foreach (XmlNode node in list1)
                 {
                     XmlNode nameAttribute = node.Attributes["Name"];
@@ -243,16 +270,19 @@ namespace RSBuild
                             ? ProcessGlobals(reportServerAttribute.Value)
                             : null;
 
+                        ReportServerInfo reportServerInfo = reportServer != null && ReportServers.ContainsKey(reportServer)
+                            ? (ReportServerInfo)ReportServers[reportServer]
+                            : null;
                         DataSource dataSource = new DataSource(name, 
                             userName, password, credentialRetrieval, windowsCredentials, 
                             extension, connectionString, publish, overwrite, 
-                            targetFolder, reportServer);
-                        _DataSources[name] = dataSource;
+                            targetFolder, reportServerInfo);
+                        _dataSources[name] = dataSource;
                         
                         string dbConnectionString;
                         if (dataSource.TryGetDbConnectionString(out dbConnectionString))
                         {
-                            _DBConnections[name] = dbConnectionString;
+                            _dbConnections[name] = dbConnectionString;
                         }
                     }
                 }
@@ -263,7 +293,7 @@ namespace RSBuild
             int k = 0;
             if (list7 != null)
             {
-                _ReportGroups = new ReportGroup[list7.Count];
+                _reportGroups = new ReportGroup[list7.Count];
                 foreach (XmlNode node in list7)
                 {
                     string rgName = null;
@@ -322,14 +352,14 @@ namespace RSBuild
                                         reportCacheTime = int.Parse(ProcessGlobals(n15.Value));
                                     }
 
-                                    reports[i] = new Report(rpName, string.Format("{0}{1}", Settings.CurrentDirectory, n11.InnerText), collapsedHeight, reportCacheTime);
+                                    reports[i] = new Report(rpName, GetFilePath(n11.InnerText), collapsedHeight, reportCacheTime);
                                 }
 
                                 i++;
                             }
                         }
 
-                        _ReportGroups[k] = new ReportGroup(rgName, targetFolder, dataSourceName, reportServer, reports);
+                        _reportGroups[k] = CreateReportGroup(rgName, targetFolder, dataSourceName, reportServer, reports);
                     }
                     k++;
                 }
@@ -340,7 +370,7 @@ namespace RSBuild
             int j = 0;
             if (list3 != null)
             {
-                _DBExecutions = new DBExecution[list3.Count];
+                _dbExecutions = new DBExecution[list3.Count];
                 foreach (XmlNode node in list3)
                 {
                     XmlNode dataSourceName = node.Attributes["DataSourceName"];
@@ -358,7 +388,7 @@ namespace RSBuild
                             }
                         }
 
-                        _DBExecutions[j] = new DBExecution(ProcessGlobals(dataSourceName.Value), files);
+                        _dbExecutions[j] = CreateDbExecution(ProcessGlobals(dataSourceName.Value), files);
                     }
 
                     j++;
@@ -366,117 +396,104 @@ namespace RSBuild
             }
         }
 
-        /// <summary>
-        /// Gets the current diretory.
-        /// </summary>
-        /// <value>The current diretory.</value>
-        public static string CurrentDirectory
+        private ReportGroup CreateReportGroup(string name, string targetFolder, string dataSourceName, string reportServer, Report[] reports)
         {
-            get
-            {
-                return _CurrentDirectory.EndsWith("\\") ? _CurrentDirectory : string.Format("{0}\\", _CurrentDirectory);
-            }
+            DataSource dataSource = dataSourceName != null && DataSources.ContainsKey(dataSourceName)
+                ? (DataSource)DataSources[dataSourceName]
+                : null;
+            ReportServerInfo reportServerInfo = reportServer != null && ReportServers.ContainsKey(reportServer)
+                ? (ReportServerInfo)ReportServers[reportServer]
+                : null;
+
+            return new ReportGroup(name, targetFolder, dataSource, reportServerInfo, reports);
         }
 
-        /// <summary>
-        /// Gets or sets the RSBuild settings file path.
-        /// </summary>
-        /// <value>The config file path.</value>
-        public static string SettingsFilePath
+        private DBExecution CreateDbExecution(string dataSourceName, StringCollection files)
         {
-            get
+            DataSource dataSource = dataSourceName != null && DataSources.ContainsKey(dataSourceName)
+                ? (DataSource) DataSources[dataSourceName]
+                : null;
+
+            StringCollection filePaths = null;
+            if (files != null)
             {
-                return _SettingsFilePath;
+                filePaths = new StringCollection();
+                foreach (string file in files)
+                {
+                    filePaths.Add(GetFilePath(file.Trim()));
+                }
             }
-            set
-            {
-                _SettingsFilePath = string.Format("{0}{1}", CurrentDirectory, value);
-            }
+
+            return new DBExecution(dataSource, filePaths);
         }
+
+        #endregion
+
+        #region Public properties
 
         /// <summary>
         /// Gets the data sources.
         /// </summary>
         /// <value>The data sources.</value>
-        public static Hashtable DataSources
+        public Hashtable DataSources
         {
-            get
-            {
-                return _DataSources;
-            }
+            get { return _dataSources; }
         }
 
         /// <summary>
         /// Gets the report groups.
         /// </summary>
         /// <value>The report groups.</value>
-        public static ReportGroup[] ReportGroups
+        public ReportGroup[] ReportGroups
         {
-            get
-            {
-                return _ReportGroups;
-            }
+            get { return _reportGroups; }
         }
 
         /// <summary>
         /// Gets the DB executions.
         /// </summary>
         /// <value>The DB executions.</value>
-        public static DBExecution[] DBExecutions
+        public DBExecution[] DBExecutions
         {
-            get
-            {
-                return _DBExecutions;
-            }
+            get { return _dbExecutions; }
         }
 
         /// <summary>
         /// Gets the DB connections.
         /// </summary>
         /// <value>The DB connections.</value>
-        public static StringDictionary DBConnections
+        public StringDictionary DBConnections
         {
-            get
-            {
-                return _DBConnections;
-            }
+            get { return _dbConnections; }
         }
 
         /// <summary>
         /// Gets the global variables.
         /// </summary>
         /// <value>The global variables.</value>
-        public static StringDictionary GlobalVariables
+        public StringDictionary GlobalVariables
         {
-            get
-            {
-                return _GlobalVariables;
-            }
+            get { return _globalVariables; }
         }
 
         /// <summary>
         /// Gets the report servers.
         /// </summary>
         /// <value>The report servers.</value>
-        public static Hashtable ReportServers
+        public Hashtable ReportServers
         {
-            get
-            {
-                return _ReportServers;
-            }
+            get { return _reportServers; }
         }
 
-        private static string ReplaceMatches(Match match)
-        {
-            string key = match.Groups["k"].ToString();
-            string toReplace = match.Groups["g"].ToString();
-            string output = toReplace;
-            if (_GlobalVariables.ContainsKey(key))
-            {
-                output = _GlobalVariables[key];
-            }
+        #endregion
 
-            return output;
+        #region Public methods
+
+        public string GetFilePath(string fileName)
+        {
+            return Path.IsPathRooted(fileName)
+               ? fileName
+               : Path.Combine(_settingsDir, fileName);
         }
 
         /// <summary>
@@ -484,11 +501,20 @@ namespace RSBuild
         /// </summary>
         /// <param name="input">The input.</param>
         /// <returns></returns>
-        public static string ProcessGlobals(string input)
+        public string ProcessGlobals(string input)
         {
-            string output = input;
-            MatchCollection matches = GlobalsRegex.Matches(input);
-            output = GlobalsRegex.Replace(output, new MatchEvaluator(ReplaceMatches));
+            return GlobalsRegex.Replace(input, new MatchEvaluator(ReplaceMatches));
+        }
+
+        private string ReplaceMatches(Match match)
+        {
+            string key = match.Groups["k"].ToString();
+            string toReplace = match.Groups["g"].ToString();
+            string output = toReplace;
+            if (_globalVariables.ContainsKey(key))
+            {
+                output = _globalVariables[key];
+            }
 
             return output;
         }
@@ -506,7 +532,7 @@ namespace RSBuild
                 string copyrightInformation = null;
                 string companyInformation = null;
 
-                Assembly assembly = _Assembly;
+                Assembly assembly = DefaultAssembly;
 
                 // get product name
                 object[] productAttributes = assembly.GetCustomAttributes(typeof(AssemblyProductAttribute), false);
@@ -561,5 +587,7 @@ namespace RSBuild
                 return logoBanner.ToString();
             }
         }
+
+        #endregion
     }
 }

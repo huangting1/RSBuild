@@ -10,7 +10,9 @@ namespace RSBuild
 	/// </summary>
 	public class PublishTask : Task
 	{
-		private Hashtable _ReportServers;
+        private readonly Settings Settings;
+
+        private Hashtable _ReportServers;
 		private Hashtable _WSWrappers;
 		private Hashtable _DataSources;
 		private ReportGroup[] _ReportGroups;
@@ -18,11 +20,13 @@ namespace RSBuild
         /// <summary>
         /// Initializes a new instance of the <see cref="PublishTask"/> class.
         /// </summary>
-		public PublishTask()
+		public PublishTask(Settings settings)
 		{
-			_ReportServers = Settings.ReportServers ?? new Hashtable();
-            _DataSources = Settings.DataSources ?? new Hashtable();
-            _ReportGroups = Settings.ReportGroups ?? new ReportGroup[0];
+            this.Settings = settings;
+
+            _ReportServers = settings.ReportServers ?? new Hashtable();
+            _DataSources = settings.DataSources ?? new Hashtable();
+            _ReportGroups = settings.ReportGroups ?? new ReportGroup[0];
             _WSWrappers = new Hashtable();
         }
 
@@ -166,8 +170,10 @@ namespace RSBuild
 					if (reportGroup != null)
 					{
 						IWSWrapper wsWrapper = (IWSWrapper)_WSWrappers[reportGroup.ReportServer.Name];
-						Report[] reports = reportGroup.Reports;
-						if (reports != null && reports.Length > 0)
+
+                        string reportDir = Util.FormatPath(reportGroup.TargetFolder);
+                        Report[] reports = reportGroup.Reports;
+                        if (reports != null && reports.Length > 0)
 						{
                             foreach (Report report in reports)
                             {
@@ -175,7 +181,11 @@ namespace RSBuild
                                 {
                                     try
                                     {
-                                        wsWrapper.CreateReport(reportGroup, report);
+                                        byte[] reportDefinition = report.Process(
+                                            reportGroup.TargetFolder,
+                                            reportGroup.DataSource,
+                                            Settings);
+                                        wsWrapper.CreateReport(report, reportDir, reportDefinition);
                                     }
                                     catch (Exception e)
                                     {

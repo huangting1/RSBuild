@@ -83,17 +83,11 @@ namespace RSBuild
                 null);
         }
 
-        public void CreateReport(ReportGroup reportGroup, Report report)
+        public void CreateReport(Report report, string reportDir, byte[] reportDefinition)
         {
-			byte[] definition = report.Process(reportGroup.TargetFolder, reportGroup.DataSource);
-            if (definition == null) return;
+            if (reportDefinition == null) return;
 
-            Warning[] warnings = _proxy.CreateReport(
-                report.Name,
-                Util.FormatPath(reportGroup.TargetFolder),
-                true,
-                definition,
-                null);
+            Warning[] warnings = _proxy.CreateReport(report.Name, reportDir, true, reportDefinition, null);
 
             if (warnings != null)
             {
@@ -113,7 +107,7 @@ namespace RSBuild
                 && report.CacheOption.ExpirationMinutes != null)
             {
                 _proxy.SetCacheOptions(
-                    string.Format("{0}/{1}", Util.FormatPath(reportGroup.TargetFolder), report.Name),
+                    string.Format("{0}/{1}", reportDir, report.Name),
                     true,
                     new TimeExpiration() { Minutes = report.CacheOption.ExpirationMinutes.Value });
             }

@@ -79,27 +79,16 @@ namespace RSBuild
         /// </summary>
         /// <param name="name">The name.</param>
         /// <param name="targetFolder">The target folder.</param>
-        /// <param name="dataSourceName">Name of the data source.</param>
+        /// <param name="dataSource">The data source.</param>
         /// <param name="reportServer">The report server.</param>
         /// <param name="reports">The reports.</param>
-		public ReportGroup(string name, string targetFolder, string dataSourceName, string reportServer, Report[] reports)
+		public ReportGroup(string name, string targetFolder, DataSource dataSource, ReportServerInfo reportServer, Report[] reports)
 		{
 			_Name = name;
 			_TargetFolder = targetFolder;
-			if (dataSourceName != null)
-			{
-				if (Settings.DataSources.ContainsKey(dataSourceName))
-				{
-					_DataSource = (DataSource)Settings.DataSources[dataSourceName];
-				}
-			}
-			if (reportServer != null)
-			{
-				if (Settings.ReportServers.ContainsKey(reportServer))
-				{
-					_ReportServer = (ReportServerInfo)Settings.ReportServers[reportServer];
-				}
-			}
+            _DataSource = dataSource;
+            _ReportServer = reportServer;
+
 			if (targetFolder != null && targetFolder.Length > 0)
 			{
 				_TargetFolder = targetFolder.Trim();
