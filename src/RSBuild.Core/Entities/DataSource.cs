@@ -131,7 +131,7 @@ namespace RSBuild
         /// <param name="overwrite">if set to <c>true</c>, overwrite.</param>
         /// <param name="targetFolder">The target folder.</param>
         /// <param name="reportServer">The report server.</param>
-		public DataSource(string name, string userName, string password, string credentialRetrieval, bool windowsCredentials, string extension, string connectionString, bool publish, bool overwrite, string targetFolder, string reportServer)
+		public DataSource(string name, string userName, string password, string credentialRetrieval, bool windowsCredentials, string extension, string connectionString, bool publish, bool overwrite, string targetFolder, ReportServerInfo reportServer)
 		{
 			_name = name;
 			_userName = string.IsNullOrEmpty(userName)
@@ -149,13 +149,7 @@ namespace RSBuild
                 ? targetFolder
                 : targetFolder.Trim();
 
-			if (reportServer != null)
-			{
-				if (Settings.ReportServers.ContainsKey(reportServer))
-				{
-					_reportServer = (ReportServerInfo)Settings.ReportServers[reportServer];
-				}
-			}
+            _reportServer = reportServer;
 
 			_credentialRetrieval = ReportCredential.Integrated;
 			if (credentialRetrieval != null)

@@ -5,16 +5,17 @@ namespace RSBuild
 	/// </summary>
 	public class Dispatcher
 	{
+	    private readonly string _settingsFileName;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Dispatcher"/> class.
         /// </summary>
         /// <param name="args">The arguments.</param>
 		public Dispatcher(string[] args)
 		{
-			if (args != null && args.Length > 0)
-			{
-				Settings.SettingsFilePath = args[0];
-			}
+            _settingsFileName = args != null && args.Length > 0
+                ? args[0]
+                : null;
 		}
 
         /// <summary>
@@ -22,29 +23,27 @@ namespace RSBuild
         /// </summary>
 		public void Run()
 		{
-			if (Settings.Init())
-			{
-				LogBanner();
-				RunTasks();
-			}
+            Settings settings = Settings.Load(_settingsFileName);
+			LogBanner();
+			RunTasks(settings);
 		}
 
         /// <summary>
         /// Runs the tasks.
         /// </summary>
-		private void RunTasks()
+		private void RunTasks(Settings settings)
 		{
 			// need refactoring
 			
 			LogSectionHeader("Database Installation");
-			DBTask dbTask = new DBTask();
+			DBTask dbTask = new DBTask(settings);
 			if (dbTask.Validate())
 			{
 				dbTask.Execute();
 			}
 
 			LogSectionHeader("Reports Installation");
-            PublishTask publishTask = new PublishTask();
+            PublishTask publishTask = new PublishTask(settings);
             if (publishTask.Validate())
             {
                 publishTask.Execute();

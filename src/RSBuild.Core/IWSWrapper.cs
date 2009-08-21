@@ -6,6 +6,6 @@
     {
         void CreateFolder(string Folder, string Parent);
         void CreateDataSource(DataSource source);
-        void CreateReport(ReportGroup reportGroup, Report report);
+        void CreateReport(Report report, string path, byte[] reportDefinition);
     }
 }

@@ -9,14 +9,14 @@ namespace RSBuild
 	[Serializable]
 	public class DBExecution
 	{
-		private DataSource _DataSource;
-		private StringCollection _Files;
+		private DataSource _dataSource;
+		private StringCollection _filePaths;
 
 		public DataSource DataSource
 		{
 			get
 			{
-				return _DataSource;
+				return _dataSource;
 			}
 		}
 
@@ -24,27 +24,14 @@ namespace RSBuild
 		{
 			get
 			{
-				return _Files;
+				return _filePaths;
 			}
 		}
 
-		public DBExecution(string dataSourceName, StringCollection files)
+		public DBExecution(DataSource dataSource, StringCollection files)
 		{
-			if (dataSourceName != null)
-			{
-				if (Settings.DataSources.ContainsKey(dataSourceName))
-				{
-					_DataSource = (DataSource)Settings.DataSources[dataSourceName];
-				}
-			}
-			if (files != null)
-			{
-				_Files = new StringCollection();
-				foreach (string file in files)
-				{
-					_Files.Add(string.Format("{0}{1}", Settings.CurrentDirectory, file.Trim()));
-				}
-			}
+		    _dataSource = dataSource;
+		    _filePaths = files;
 		}
 	}
 }

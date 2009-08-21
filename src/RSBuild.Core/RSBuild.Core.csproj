@@ -348,9 +348,6 @@
     <Compile Include="Tasks\Task.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Utilities\DBHelper.cs">
-      <SubType>Code</SubType>
-    </Compile>
     <Compile Include="Utilities\Util.cs">
       <SubType>Code</SubType>
     </Compile>

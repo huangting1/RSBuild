@@ -91,7 +91,7 @@ namespace RSBuild
         /// <param name="targetFolder">The target folder.</param>
         /// <param name="dataSource">The data source.</param>
         /// <returns>The report definition.</returns>
-		public byte[] Process(string targetFolder, DataSource dataSource)
+		public byte[] Process(string targetFolder, DataSource dataSource, Settings settings)
 		{
 			FileStream stream = null;
 			byte[] definition = null;
@@ -118,8 +118,8 @@ namespace RSBuild
 				{
 					XmlTextWriter xtw = new XmlTextWriter(sw);
 					e.WriteTo(xtw);
-					definition = Util.StringToByteArray(Settings.ProcessGlobals(sw.ToString()));
-					xtw.Close();
+					definition = Util.StringToByteArray(settings.ProcessGlobals(sw.ToString()));
+                    xtw.Close();
 				}
 			}
 			catch(Exception e)
