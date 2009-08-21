@@ -112,6 +112,36 @@
       <xs:documentation>Data source for reports and/or database scripts.</xs:documentation>
     </xs:annotation>
     <xs:sequence minOccurs="1" maxOccurs="1">
+      <xs:element name="Extension" minOccurs="0" maxOccurs="1" default="SQL">
+        <xs:annotation>
+          <xs:documentation>
+            The connection string type for a data source.
+          </xs:documentation>
+        </xs:annotation>
+        <xs:simpleType>
+          <xs:restriction base="xs:string">
+            <xs:enumeration value="SQL">
+              <xs:annotation>
+                <xs:documentation>
+                  SQL Server connection string.
+                </xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="ODBC" />
+            <xs:enumeration value="OLEDB" />
+            <xs:enumeration value="OLEDB-MD">
+              <xs:annotation>
+                <xs:documentation>
+                  Microsoft SQL Server Analysis Services.
+                </xs:documentation>
+              </xs:annotation>
+            </xs:enumeration>
+            <xs:enumeration value="ORACLE" />
+            <xs:enumeration value="XML" />
+            <xs:minLength value="1" />
+          </xs:restriction>
+        </xs:simpleType>
+      </xs:element>
       <xs:element name="ConnectionString" minOccurs="1" maxOccurs="1">
         <xs:annotation>
           <xs:documentation>
