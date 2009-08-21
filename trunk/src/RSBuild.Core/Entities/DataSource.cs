@@ -1,6 +1,7 @@
 namespace RSBuild
 {
     using System;
+    using System.Text;
 
     /// <summary>
 	/// Represents a data source.
@@ -8,17 +9,19 @@ namespace RSBuild
 	[Serializable]
 	public class DataSource
 	{
-		private string _Name;
-		private string _UserName;
-		private string _Password;
-		private string _ConnectionString;
-		private string _RSConnectionString;
-		private ReportCredential _CredentialRetrieval;
-		private bool _WindowsCredentials;
-		private bool _Publish;
-		private bool _Overwrite;
-		private string _TargetFolder;
-		private ReportServerInfo _ReportServer;
+        public const string DefaultExtension = "SQL";
+
+        private string _extension;
+		private string _name;
+		private string _userName;
+		private string _password;
+		private string _connectionString;
+		private ReportCredential _credentialRetrieval;
+		private bool _windowsCredentials;
+		private bool _publish;
+		private bool _overwrite;
+		private string _targetFolder;
+		private ReportServerInfo _reportServer;
 
         /// <summary>
         /// Gets the name.
@@ -26,10 +29,7 @@ namespace RSBuild
         /// <value>The name.</value>
 		public string Name
 		{
-			get
-			{
-				return _Name;
-			}
+			get { return _name; }
 		}
 
         /// <summary>
@@ -38,10 +38,7 @@ namespace RSBuild
         /// <value>The user name.</value>
 		public string UserName
 		{
-			get
-			{
-				return _UserName;
-			}
+			get { return _userName; }
 		}
 
         /// <summary>
@@ -50,10 +47,7 @@ namespace RSBuild
         /// <value>The password.</value>
 		public string Password
 		{
-			get
-			{
-				return _Password;
-			}
+			get { return _password; }
 		}
 
         /// <summary>
@@ -62,54 +56,21 @@ namespace RSBuild
         /// <value>The credential retrieval enum.</value>
 		public ReportCredential CredentialRetrieval
 		{
-			get
-			{
-				return _CredentialRetrieval;
-			}
+			get { return _credentialRetrieval; }
 		}
 
-        /// <summary>
-        /// Gets the connection string.
-        /// </summary>
-        /// <value>The connection string.</value>
-		public string ConnectionString
-		{
-			get
-			{
-				if (_RSConnectionString.EndsWith(";"))
-				{
-					_ConnectionString = _RSConnectionString.Substring(0, _RSConnectionString.Length-1);
-				}
-				else
-				{
-					_ConnectionString = _RSConnectionString;
-				}
-				if (_UserName != null)
-				{
-					_ConnectionString = string.Format("{0};uid={1};pwd={2}", _ConnectionString, _UserName, _Password);
-					
-				}
-				else
-				{
-					if (_ConnectionString.ToLower().IndexOf("trusted_connection") < 0)
-					{
-						_ConnectionString = string.Format("{0};Trusted_Connection=yes", _ConnectionString);
-					}
-				}
-				return _ConnectionString;
-			}
-		}
+        public string Extension
+        {
+            get { return _extension; }
+        }
 
         /// <summary>
         /// Gets the connection string in RS desired format.
         /// </summary>
         /// <value>The connection string in RS desired format.</value>
-		public string RSConnectionString
+		public string ConnectionString
 		{
-			get
-			{
-				return _RSConnectionString;
-			}
+			get { return _connectionString; }
 		}
 
         /// <summary>
@@ -118,10 +79,7 @@ namespace RSBuild
         /// <value><c>true</c> if published; otherwise, <c>false</c>.</value>
 		public bool Publish
 		{
-			get
-			{
-				return _Publish;
-			}
+			get { return _publish; }
 		}
 
         /// <summary>
@@ -130,10 +88,7 @@ namespace RSBuild
         /// <value><c>true</c> if overwrite; otherwise, <c>false</c>.</value>
 		public bool Overwrite
 		{
-			get
-			{
-				return _Overwrite;
-			}
+			get { return _overwrite; }
 		}
 
         /// <summary>
@@ -142,10 +97,7 @@ namespace RSBuild
         /// <value><c>true</c> if windows credentials; otherwise, <c>false</c>.</value>
 		public bool WindowsCredentials
 		{
-			get
-			{
-				return _WindowsCredentials;
-			}
+			get { return _windowsCredentials; }
 		}
 
         /// <summary>
@@ -154,10 +106,7 @@ namespace RSBuild
         /// <value>The target folder.</value>
 		public string TargetFolder
 		{
-			get
-			{
-				return _TargetFolder;
-			}
+			get { return _targetFolder; }
 		}
 
         /// <summary>
@@ -166,10 +115,7 @@ namespace RSBuild
         /// <value>The report server.</value>
 		public ReportServerInfo ReportServer
 		{
-			get
-			{
-				return _ReportServer;
-			}
+			get { return _reportServer; }
 		}
 
         /// <summary>
@@ -185,32 +131,38 @@ namespace RSBuild
         /// <param name="overwrite">if set to <c>true</c>, overwrite.</param>
         /// <param name="targetFolder">The target folder.</param>
         /// <param name="reportServer">The report server.</param>
-		public DataSource(string name, string userName, string password, string credentialRetrieval, bool windowsCredentials, string connectionString, bool publish, bool overwrite, string targetFolder, string reportServer)
+		public DataSource(string name, string userName, string password, string credentialRetrieval, bool windowsCredentials, string extension, string connectionString, bool publish, bool overwrite, string targetFolder, string reportServer)
 		{
-			_Name = name;
-			_UserName = userName;
-			_Password = password;
-			_RSConnectionString = connectionString;
-			_Publish = publish;
-			_Overwrite = overwrite;
-			if (targetFolder != null && targetFolder.Length > 0)
-			{
-				_TargetFolder = targetFolder.Trim();
-			}
+			_name = name;
+			_userName = string.IsNullOrEmpty(userName)
+                ? null
+                : userName.Trim();
+			_password = password;
+            _extension = string.IsNullOrEmpty(extension)
+                ? DefaultExtension
+                : extension;
+			_connectionString = connectionString;
+			_publish = publish;
+			_overwrite = overwrite;
+
+            _targetFolder = string.IsNullOrEmpty(targetFolder)
+                ? targetFolder
+                : targetFolder.Trim();
+
 			if (reportServer != null)
 			{
 				if (Settings.ReportServers.ContainsKey(reportServer))
 				{
-					_ReportServer = (ReportServerInfo)Settings.ReportServers[reportServer];
+					_reportServer = (ReportServerInfo)Settings.ReportServers[reportServer];
 				}
 			}
 
-			_CredentialRetrieval = ReportCredential.Integrated;
+			_credentialRetrieval = ReportCredential.Integrated;
 			if (credentialRetrieval != null)
 			{
 				try
 				{
-					_CredentialRetrieval = (ReportCredential)Enum.Parse(typeof(ReportCredential), credentialRetrieval, true);
+					_credentialRetrieval = (ReportCredential)Enum.Parse(typeof(ReportCredential), credentialRetrieval, true);
 				}
 				catch(ArgumentException e)
 				{
@@ -218,8 +170,44 @@ namespace RSBuild
 				}
 			}
 
-			_WindowsCredentials = windowsCredentials;
+			_windowsCredentials = windowsCredentials;
 		}
 
+        /// <summary>
+        /// Gets the connection string.
+        /// </summary>
+        /// <value>The connection string.</value>
+        public bool TryGetDbConnectionString(out string result)
+        {
+            const char SEPARATOR = ';';
+            const string OPTION_UID = "uid";
+            const string OPTION_PWD = "pwd";
+            const string OPTION_TRUSTED_CONNECTION = "trusted_connection";
+
+            if (_extension != DefaultExtension)
+            {
+                result = null;
+                return false;
+            }
+
+
+            var sb = new StringBuilder(_connectionString);
+            if (sb.Length > 0 && sb[sb.Length] == SEPARATOR)
+            {
+                sb.Length -= 1;
+            }
+            if (_userName != null)
+            {
+                sb.Append(SEPARATOR).Append(OPTION_UID).Append('=').Append(_userName);
+                sb.Append(SEPARATOR).Append(OPTION_PWD).Append('=').Append(_password);
+            }
+            if (_connectionString.IndexOf(OPTION_TRUSTED_CONNECTION, StringComparison.InvariantCultureIgnoreCase) >= 0)
+            {
+                sb.Append(SEPARATOR).Append(OPTION_TRUSTED_CONNECTION).Append("=yes");
+            }
+
+            result = sb.ToString();
+            return true;
+        }
 	}
 }

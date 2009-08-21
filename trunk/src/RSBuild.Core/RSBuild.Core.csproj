@@ -391,6 +391,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Import Project="..\..\lib\linqtoxsd\LinqToXsd.targets" />
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>

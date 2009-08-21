@@ -197,81 +197,62 @@ namespace RSBuild
                 _DBConnections = new StringDictionary();
                 foreach (XmlNode node in list1)
                 {
-                    string name = null;
-                    string userName = null;
-                    string password = null;
-                    string credentialRetrieval = null;
-                    string connectionString = null;
-                    string targetFolder = null;
-                    string reportServer = null;
-                    bool publish = false;
-                    bool overwrite = false;
-                    bool windowsCredentials = false;
-
-                    XmlNode n1 = node.Attributes["Name"];
-
-                    if (n1 != null)
+                    XmlNode nameAttribute = node.Attributes["Name"];
+                    if (nameAttribute != null)
                     {
-                        name = n1.Value;
-                        XmlNode n2 = node.Attributes["Publish"];
-                        XmlNode n3 = node.SelectSingleNode("ConnectionString");
-                        XmlNode n4 = node.Attributes["Overwrite"];
-                        XmlNode n5 = node.SelectSingleNode("UserName");
-                        XmlNode n6 = node.SelectSingleNode("Password");
-                        XmlNode n7 = node.SelectSingleNode("CredentialRetrieval");
-                        XmlNode n8 = node.SelectSingleNode("WindowsCredentials");
-                        XmlNode n9 = node.Attributes["TargetFolder"];
-                        XmlNode n10 = node.Attributes["ReportServer"];
+                        XmlNode publishAttribute = node.Attributes["Publish"];
+                        XmlNode extensionElement = node.SelectSingleNode("Extension");
+                        XmlNode connectionStringElement = node.SelectSingleNode("ConnectionString");
+                        XmlNode overwriteAttribute = node.Attributes["Overwrite"];
+                        XmlNode userNameElement = node.SelectSingleNode("UserName");
+                        XmlNode passwordElement = node.SelectSingleNode("Password");
+                        XmlNode credentialRetrievalElement = node.SelectSingleNode("CredentialRetrieval");
+                        XmlNode windowsCredentialsElement = node.SelectSingleNode("WindowsCredentials");
+                        XmlNode targetFolderElement = node.Attributes["TargetFolder"];
+                        XmlNode reportServerAttribute = node.Attributes["ReportServer"];
 
-                        if (n2 != null)
-                        {
-                            publish = (n2.Value.ToLower() == "true");
-                        }
-                        if (n3 != null)
-                        {
-                            connectionString = ProcessGlobals(n3.InnerText);
-                        }
-                        if (n4 != null)
-                        {
-                            overwrite = (n4.Value.ToLower() == "true");
-                        }
-                        if (n5 != null)
-                        {
-                            if (n5.InnerText.Trim().Length > 0)
-                            {
-                                userName = ProcessGlobals(n5.InnerText);
-                            }
-                        }
-                        if (n6 != null)
-                        {
-                            password = ProcessGlobals(n6.InnerText);
-                        }
-                        if (n7 != null)
-                        {
-                            credentialRetrieval = ProcessGlobals(n7.InnerText);
-                        }
-                        if (n8 != null)
-                        {
-                            windowsCredentials = (n8.InnerText.ToLower() == "true");
-                        }
-                        if (n9 != null)
-                        {
-                            targetFolder = ProcessGlobals(n9.Value);
-                        }
-                        if (n10 != null)
-                        {
-                            reportServer = ProcessGlobals(n10.Value);
-                        }
+                        string name = nameAttribute.Value;
+                        bool publish = publishAttribute != null
+                            && Convert.ToBoolean(publishAttribute.Value, CultureInfo.InvariantCulture);
+                        bool overwrite = overwriteAttribute != null
+                            && Convert.ToBoolean(overwriteAttribute.Value, CultureInfo.InvariantCulture);
 
-                        if (_DataSources.ContainsKey(name))
+                        string extension = extensionElement != null
+                           ? ProcessGlobals(extensionElement.InnerText)
+                           : null;
+                        string connectionString = connectionStringElement != null
+                           ? ProcessGlobals(connectionStringElement.InnerText)
+                           : null;
+                        string userName = userNameElement != null
+                            ? ProcessGlobals(userNameElement.InnerText).Trim()
+                            : null;
+                        string password = passwordElement != null
+                            ? ProcessGlobals(passwordElement.InnerText)
+                            : null;
+
+                        string credentialRetrieval = credentialRetrievalElement != null
+                            ? ProcessGlobals(credentialRetrievalElement.InnerText)
+                            : null;
+                        bool windowsCredentials = windowsCredentialsElement != null
+                            && Convert.ToBoolean(windowsCredentialsElement.Value, CultureInfo.InvariantCulture);
+
+                        string targetFolder = targetFolderElement != null
+                            ? ProcessGlobals(targetFolderElement.Value)
+                            : null;
+                        string reportServer = reportServerAttribute != null
+                            ? ProcessGlobals(reportServerAttribute.Value)
+                            : null;
+
+                        DataSource dataSource = new DataSource(name, 
+                            userName, password, credentialRetrieval, windowsCredentials, 
+                            extension, connectionString, publish, overwrite, 
+                            targetFolder, reportServer);
+                        _DataSources[name] = dataSource;
+                        
+                        string dbConnectionString;
+                        if (dataSource.TryGetDbConnectionString(out dbConnectionString))
                         {
-                            _DataSources[name] = new DataSource(name, userName, password, credentialRetrieval, windowsCredentials, connectionString, publish, overwrite, targetFolder, reportServer);
-                            _DBConnections[name] = ((DataSource)_DataSources[name]).ConnectionString;
-                        }
-                        else
-                        {
-                            _DataSources.Add(name, new DataSource(name, userName, password, credentialRetrieval, windowsCredentials, connectionString, publish, overwrite, targetFolder, reportServer));
-                            _DBConnections.Add(name, ((DataSource)_DataSources[name]).ConnectionString);
+                            _DBConnections[name] = dbConnectionString;
                         }
                     }
                 }

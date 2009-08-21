@@ -177,10 +177,11 @@ namespace RSBuild
 
 				if (dataSource.Publish)
 				{
-					string nodeXml = string.Format("<rd:DataSourceID>{0}</rd:DataSourceID><DataSourceReference>{1}</DataSourceReference>",
-						Guid.NewGuid().ToString(),
-						string.Format("{0}{1}", Util.GetRelativePath(targetFolder, dataSource.TargetFolder), dataSource.Name)
-						);
+					string nodeXml = string.Format(
+                        "<rd:DataSourceID>{0}</rd:DataSourceID><DataSourceReference>{1}{2}</DataSourceReference>",
+						Guid.NewGuid(),
+						Util.GetRelativePath(targetFolder, dataSource.TargetFolder), 
+                        dataSource.Name);
 
 					try
 					{

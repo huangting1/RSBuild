@@ -59,7 +59,8 @@ namespace RSBuild
         public void CreateDataSource(DataSource source)
         {
             DataSourceDefinition definition = new DataSourceDefinition();
-            definition.ConnectString = source.RSConnectionString;
+            definition.Extension = source.Extension;
+            definition.ConnectString = source.ConnectionString;
             definition.CredentialRetrieval = (CredentialRetrievalEnum)source.CredentialRetrieval;
             if (source.UserName != null)
             {
