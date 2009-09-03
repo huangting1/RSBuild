@@ -137,7 +137,6 @@
     <Compile Include="Entities\ReportServerInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="IWsWrapper.cs" />
     <Compile Include="Logger.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -364,6 +363,7 @@
     <None Include="..\RSBuild.snk">
       <Link>RSBuild.snk</Link>
     </None>
+    <Compile Include="IWSWrapper.cs" />
     <None Include="ReportingServices\vssver.scc" />
     <EmbeddedResource Include="RSBuild.xsd" />
   </ItemGroup>
