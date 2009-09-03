@@ -1,33 +1,31 @@
-namespace RSBuild
+namespace RSBuild.Tasks
 {
     using System;
-    using System.Collections;
+    using System.Collections.Generic;
     using System.Collections.Specialized;
     using System.Text;
+    using RSBuild.Entities;
 
     /// <summary>
 	/// Represents a publish task.
 	/// </summary>
 	public class PublishTask : Task
 	{
-        private readonly Settings Settings;
-
-        private Hashtable _ReportServers;
-		private Hashtable _WSWrappers;
-		private Hashtable _DataSources;
-		private ReportGroup[] _ReportGroups;
+        private readonly GlobalVariableDictionary _globalVariables;
+        private readonly IDictionary<string, ReportServerInfo> _reportServers;
+		private readonly IDictionary<string, DataSource> _dataSources;
+		private readonly IList<ReportGroup> _reportGroups;
+        private readonly IDictionary<string, IWsWrapper> _wsWrappers = new Dictionary<string, IWsWrapper>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PublishTask"/> class.
         /// </summary>
 		public PublishTask(Settings settings)
 		{
-            this.Settings = settings;
-
-            _ReportServers = settings.ReportServers ?? new Hashtable();
-            _DataSources = settings.DataSources ?? new Hashtable();
-            _ReportGroups = settings.ReportGroups ?? new ReportGroup[0];
-            _WSWrappers = new Hashtable();
+            _globalVariables = settings.GlobalVariables;
+            _reportServers = new Dictionary<string, ReportServerInfo>(settings.ReportServers);
+            _dataSources = new Dictionary<string, DataSource>(settings.DataSources);
+            _reportGroups = new List<ReportGroup>(settings.ReportGroups);
         }
 
         /// <summary>
@@ -46,22 +44,22 @@ namespace RSBuild
         /// <returns>true if the task is valid.</returns>
 		public override bool Validate()
 		{
-			if (_ReportServers.Count == 0)
+			if (_reportServers.Count == 0)
             {
                 Logger.LogException("PublishTask::Validate", "No report server specified.");
                 return false;
             }
 
-			foreach(ReportServerInfo reportServer in _ReportServers.Values)
+			foreach(ReportServerInfo reportServer in _reportServers.Values)
 			{
                 Logger.LogMessage(string.Format("Validating reporting service: {0}", reportServer.ServiceBaseUrl));
 
-                IWSWrapper wrapper;
+                IWsWrapper wrapper;
                 Exception exception;
-                if (WSWrapper2003.TryCreate(reportServer, out wrapper, out exception)
-                    || WSWrapper2005.TryCreate(reportServer, out wrapper, out exception))
+                if (WsWrapper2003.TryCreate(reportServer, out wrapper, out exception)
+                    || WsWrapper2005.TryCreate(reportServer, out wrapper, out exception))
                 {
-                    _WSWrappers.Add(reportServer.Name, wrapper);
+                    _wsWrappers.Add(reportServer.Name, wrapper);
                 }
                 else
                 {
@@ -79,37 +77,31 @@ namespace RSBuild
 		{
 			StringDictionary folders = new StringDictionary();
 
-			if (_DataSources.Count > 0)
+			foreach(DataSource source in _dataSources.Values)
 			{
-				foreach(DataSource source in _DataSources.Values)
+				if (source.Publish
+                    && source.TargetFolder != null
+                    && !folders.ContainsKey(source.TargetFolder))
 				{
-					if (source.Publish
-                        && source.TargetFolder != null
-                        && !folders.ContainsKey(source.TargetFolder))
-					{
-                        folders.Add(source.TargetFolder, source.TargetFolder);
-					}
+                    folders.Add(source.TargetFolder, source.TargetFolder);
 				}
 			}
 
-            if (_ReportGroups.Length > 0)
+			foreach(ReportGroup reportGroup in _reportGroups)
 			{
-				foreach(ReportGroup reportGroup in _ReportGroups)
+				if (reportGroup != null 
+                    && reportGroup.TargetFolder != null
+                    && !folders.ContainsKey(reportGroup.TargetFolder))
 				{
-					if (reportGroup != null 
-                        && reportGroup.TargetFolder != null
-                        && !folders.ContainsKey(reportGroup.TargetFolder))
-					{
-                        folders.Add(reportGroup.TargetFolder, reportGroup.TargetFolder);
-					}
+                    folders.Add(reportGroup.TargetFolder, reportGroup.TargetFolder);
 				}
 			}
 
-			foreach(IWSWrapper wsWrapper in _WSWrappers.Values)
+			foreach(IWsWrapper wsWrapper in _wsWrappers.Values)
 			{
 				foreach(string folder in folders.Values)
 				{
-					string[] folderSegments = folder.Split(new char[]{'/', '\\'});
+					string[] folderSegments = folder.Split(new[] {'/', '\\'});
 					StringBuilder location = new StringBuilder();
 
 					foreach (string folderSegment in folderSegments)
@@ -119,11 +111,11 @@ namespace RSBuild
 							try
 							{
 								wsWrapper.CreateFolder(folderSegment, location.Length == 0 ? "/" : location.ToString());
-								Logger.LogMessage(string.Format("Folder created: {0} at {1}", folderSegment, location.ToString()));
+								Logger.LogMessage(string.Format("Folder created: {0} at {1}", folderSegment, location));
 							}
-							catch(Exception)
+							catch(Exception e)
 							{
-								//Logger.LogException("PublishTask::CreateFolders", e.Message);
+								Logger.LogException("PublishTask::CreateFolders", e.Message);
 							}
 							location.AppendFormat("/{0}", folderSegment);
 						}
@@ -137,15 +129,15 @@ namespace RSBuild
         /// </summary>
 		private void CreateDataSources()
 		{
-			if (_DataSources != null && _DataSources.Count > 0)
+			if (_dataSources != null && _dataSources.Count > 0)
 			{
-				foreach(DataSource source in _DataSources.Values)
+				foreach(DataSource source in _dataSources.Values)
 				{
 					if (source.Publish && source.ReportServer != null)
 					{
 						try
 						{
-							IWSWrapper wsWrapper = (IWSWrapper)_WSWrappers[source.ReportServer.Name];
+							IWsWrapper wsWrapper = _wsWrappers[source.ReportServer.Name];
 							wsWrapper.CreateDataSource(source);
 							Logger.LogMessage(string.Format("DataSource: [{0}] published successfully", source.Name));
 						}
@@ -163,38 +155,27 @@ namespace RSBuild
         /// </summary>
 		private void PublishReports()
 		{
-			if (_ReportGroups.Length > 0)
+			foreach(ReportGroup reportGroup in _reportGroups)
 			{
-				foreach(ReportGroup reportGroup in _ReportGroups)
+				if (reportGroup != null)
 				{
-					if (reportGroup != null)
-					{
-						IWSWrapper wsWrapper = (IWSWrapper)_WSWrappers[reportGroup.ReportServer.Name];
+					IWsWrapper wsWrapper = _wsWrappers[reportGroup.ReportServer.Name];
 
-                        string reportDir = Util.FormatPath(reportGroup.TargetFolder);
-                        Report[] reports = reportGroup.Reports;
-                        if (reports != null && reports.Length > 0)
-						{
-                            foreach (Report report in reports)
+                    foreach (Report report in reportGroup.Reports)
+                    {
+                        if (report != null)
+                        {
+                            try
                             {
-                                if (report != null)
-                                {
-                                    try
-                                    {
-                                        byte[] reportDefinition = report.Process(
-                                            reportGroup.TargetFolder,
-                                            reportGroup.DataSource,
-                                            Settings);
-                                        wsWrapper.CreateReport(report, reportDir, reportDefinition);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        Logger.LogException("PublishTask::PublishReport", e.Message);
-                                    }
-                                }
+                                byte[] reportDefinition = Encoding.UTF8.GetBytes(report.Definition);
+                                wsWrapper.CreateReport(report, report.TargetFolder, reportDefinition);
                             }
-						}
-					}
+                            catch (Exception e)
+                            {
+                                Logger.LogException("PublishTask::PublishReport", e.Message);
+                            }
+                        }
+                    }
 				}
 			}
 		}

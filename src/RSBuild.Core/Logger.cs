@@ -11,7 +11,7 @@ namespace RSBuild
         /// Logs the exception.
         /// </summary>
         /// <param name="module">The module.</param>
-        /// <param name="exception">The e.</param>
+        /// <param name="e">The exception.</param>
 		public static void LogException( string module, Exception e ) 
 		{
 			LogException( module, e.Message );

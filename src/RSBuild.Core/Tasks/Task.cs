@@ -1,18 +1,10 @@
-using System;
-
-namespace RSBuild
+namespace RSBuild.Tasks
 {
 	/// <summary>
 	/// Represents a task.
 	/// </summary>
 	public abstract class Task
 	{
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Task"/> class.
-        /// </summary>
-		public Task()
-		{}
-
         /// <summary>
         /// Executes this instance.
         /// </summary>

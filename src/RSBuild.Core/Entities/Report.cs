@@ -1,8 +1,9 @@
-namespace RSBuild
+namespace RSBuild.Entities
 {
     using System;
-    using System.IO;
+    using System.Text.RegularExpressions;
     using System.Xml;
+    using System.Xml.XPath;
 
     /// <summary>
 	/// Represents a report.
@@ -10,45 +11,86 @@ namespace RSBuild
 	[Serializable]
 	public class Report
 	{
-		private string _Name;
-		private string _FilePath;
-		private string _CollapsedHeight;
-		private CacheOption _CacheOption;
+        #region Instance fields
+
+		private readonly string _name;
+        private readonly string _targetFolder;
+        private readonly XmlDocument _definitionDoc = new XmlDocument();
+        private readonly XmlNode _bodyHeightNode; 
+        private readonly XmlNamespaceManager _xmlNamespaces;
+        private CacheOption _cacheOption;
+
+        #endregion
+
+        #region Constructor(s)
 
         /// <summary>
-        /// Gets the name.
+        /// Initializes a new instance of the <see cref="Report"/> class.
         /// </summary>
-        /// <value>The name.</value>
+        /// <param name="name">The name.</param>
+        /// <param name="targetFolder">The target folder for the report.</param>
+        /// <param name="definition">Report definition.</param>
+        public Report(string name, string targetFolder, XmlReader definition)
+        {
+            if (string.IsNullOrEmpty(name))
+            {
+                throw new ArgumentException("Report name is required", "name");
+            }
+            if (string.IsNullOrEmpty(targetFolder))
+            {
+                throw new ArgumentException("Target folder is required", "targetFolder");
+            }
+
+            _name = name;
+            _targetFolder = targetFolder;
+            _definitionDoc.Load(definition);
+            _xmlNamespaces = GetXmlNamespaceManager(_definitionDoc);
+            _bodyHeightNode = _definitionDoc.SelectSingleNode("//def:Report/def:Body/def:Height", _xmlNamespaces);
+        }
+
+        #endregion
+
+        #region Properties
+
+        /// <summary>
+        /// The report name.
+        /// </summary>
 		public string Name
 		{
-			get
-			{
-				return _Name;
-			}
+			get { return _name; }
 		}
 
         /// <summary>
-        /// Gets the file path.
+        /// The target folder for this report.
         /// </summary>
-        /// <value>The file path.</value>
-		public string FilePath
+		public string TargetFolder
 		{
-			get
-			{
-				return _FilePath;
-			}
+			get { return _targetFolder; }
 		}
 
         /// <summary>
         /// Gets the collapsed height of the report.
         /// </summary>
         /// <value>The collapsed height of the report.</value>
-		public string CollapsedHeight
+		public string BodyHeight
 		{
 			get
 			{
-				return _CollapsedHeight;
+			    return _bodyHeightNode != null
+	                ? _bodyHeightNode.InnerText
+	                : null;
 			}
+            set
+            {
+                if (value == null || !ValidateDistance(value))
+                {
+                    throw new ArgumentException("Height must match number format ##0.##in.", "value");
+                }
+                if (_bodyHeightNode != null)
+                {
+                    _bodyHeightNode.InnerText = value;
+                }
+            }
 		}
 
         /// <summary>
@@ -57,146 +99,83 @@ namespace RSBuild
         /// <value>The cache option.</value>
 		public CacheOption CacheOption
 		{
-			get
-			{
-				return _CacheOption;
-			}
-		}
+			get { return _cacheOption; }
+            set { _cacheOption = value; }
+        }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Report"/> class.
+        /// The report definition
         /// </summary>
-        /// <param name="name">The name.</param>
-        /// <param name="filePath">The file path.</param>
-        /// <param name="collapsedHeight">The height.</param>
-        /// <param name="cacheTime">The cache time.</param>
-		public Report(string name, string filePath, string collapsedHeight, int cacheTime)
-		{
-			_Name = name;
-			_FilePath = filePath;
-			if (collapsedHeight != null && Util.ValidateDistance(collapsedHeight))
-			{
-				_CollapsedHeight = collapsedHeight;
-			}
+        public string Definition
+        {
+            get { return _definitionDoc.ToString(); }
+        }
 
-			if (cacheTime > 0)
-			{
-				_CacheOption = new CacheOption(cacheTime);
-			}
-		}
+        #endregion
+
+        #region Methods
 
         /// <summary>
-        /// Processes the report.
+        /// Sets first data source reference in report definition to the specified data source.
         /// </summary>
-        /// <param name="targetFolder">The target folder.</param>
         /// <param name="dataSource">The data source.</param>
-        /// <returns>The report definition.</returns>
-		public byte[] Process(string targetFolder, DataSource dataSource, Settings settings)
-		{
-			FileStream stream = null;
-			byte[] definition = null;
+        public void SetDataSourceReference(DataSource dataSource)
+        {
+            if (dataSource.Publish)
+            {
+                string newDataSourceNodeContent = string.Format(
+                    "<rd:DataSourceID>{0}</rd:DataSourceID><DataSourceReference>{1}{2}</DataSourceReference>",
+                    Guid.NewGuid(),
+                    PathUtil.GetRelativePath(_targetFolder, dataSource.TargetFolder),
+                    dataSource.Name);
 
-			try
-			{
-				stream = File.OpenRead(_FilePath);
-				XmlDocument d = new XmlDocument();
-				d.Load(stream);
-				XmlNamespaceManager xnm = Util.GetXmlNamespaceManager(d);
-				XmlDocument e = d;
-
-				if (_CollapsedHeight != null)
-				{
-					e = CollapseHeight(d, xnm, _CollapsedHeight);
-				}
-
-				if (dataSource != null)
-				{
-					e = ConfigDataSource(e, xnm, dataSource, targetFolder);
-				}
-
-				using (StringWriter sw = new StringWriter())
-				{
-					XmlTextWriter xtw = new XmlTextWriter(sw);
-					e.WriteTo(xtw);
-					definition = Util.StringToByteArray(settings.ProcessGlobals(sw.ToString()));
-                    xtw.Close();
-				}
-			}
-			catch(Exception e)
-			{
-				Logger.LogException("Report::Process", e.Message);
-			}
-			finally
-			{
-				if (stream != null)
-				{
-					stream.Close();
-				}
-			}
-
-			return definition;
-		}
+                XmlNode firstDataSourceNode = _definitionDoc.SelectSingleNode("//def:Report/def:DataSources/def:DataSource", _xmlNamespaces);
+                if (firstDataSourceNode != null)
+                {
+                    firstDataSourceNode.InnerXml = newDataSourceNodeContent;
+                }
+            }
+        }
 
         /// <summary>
-        /// Collapses the height.
+        /// Creates a <see cref="XmlNamespaceManager"/> instance with all namespaces
+        /// used within a XML document.
+        /// </summary>
+        /// <param name="doc">The Xml document.</param>
+        /// <returns>All namespaces used within <paramref name="doc"/>.</returns>
+        private static XmlNamespaceManager GetXmlNamespaceManager(XmlDocument doc)
+        {
+            if (doc == null)
+            {
+                throw new ArgumentNullException("doc");
+            }
+            if (doc.DocumentElement == null)
+            {
+                throw new ArgumentException("report definition XML document is empty.");
+            }
+
+            XmlNamespaceManager xnm = new XmlNamespaceManager(doc.NameTable);
+
+            XPathNavigator xnav = doc.DocumentElement.CreateNavigator();
+            foreach (var ns in xnav.GetNamespacesInScope(XmlNamespaceScope.All))
+            {
+                xnm.AddNamespace(string.IsNullOrEmpty(ns.Key) ? "def" : ns.Key, ns.Value);
+            }
+
+            return xnm;
+        }
+
+        /// <summary>
+        /// Validates the distance.
         /// </summary>
         /// <param name="input">The input.</param>
-        /// <param name="xnm">The namespace.</param>
-        /// <param name="height">The height.</param>
         /// <returns></returns>
-		private XmlDocument CollapseHeight(XmlDocument input, XmlNamespaceManager xnm, string height)
-		{
-			XmlDocument output = input;
+        private static bool ValidateDistance(string input)
+        {
+            Regex reg = new Regex(@"^\d+(\.\d*)*in$", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+            return reg.IsMatch(input);
+        }
 
-			try
-			{
-				XmlNode n1 = output.SelectSingleNode("//def:Report/def:Body/def:Height", xnm);
-				if (n1 != null)
-				{
-					n1.InnerText = height;
-				}
-
-			}
-			catch(Exception)
-			{}
-
-			return output;
-		}
-
-        /// <summary>
-        /// Configs the data source.
-        /// </summary>
-        /// <param name="input">The input.</param>
-        /// <param name="xnm">The namespace.</param>
-        /// <param name="dataSource">The data source.</param>
-        /// <param name="targetFolder">The target folder.</param>
-        /// <returns></returns>
-		private XmlDocument ConfigDataSource(XmlDocument input, XmlNamespaceManager xnm, DataSource dataSource, string targetFolder)
-		{
-			XmlDocument output = input;
-
-				if (dataSource.Publish)
-				{
-					string nodeXml = string.Format(
-                        "<rd:DataSourceID>{0}</rd:DataSourceID><DataSourceReference>{1}{2}</DataSourceReference>",
-						Guid.NewGuid(),
-						Util.GetRelativePath(targetFolder, dataSource.TargetFolder), 
-                        dataSource.Name);
-
-					try
-					{
-						XmlNode n1 = output.SelectSingleNode("//def:Report/def:DataSources/def:DataSource", xnm);
-						if (n1 != null)
-						{
-							n1.InnerXml = nodeXml;
-						}
-
-					}
-					catch(Exception)
-					{}
-				}
-
-			return output;
-		}
-	}
+        #endregion
+    }
 }

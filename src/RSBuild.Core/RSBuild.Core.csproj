@@ -25,7 +25,7 @@
     </FileUpgradeFlags>
     <UpgradeBackupLocation>
     </UpgradeBackupLocation>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
     <OldToolsVersion>2.0</OldToolsVersion>
     <PublishUrl>http://localhost/RSBuild.Core/</PublishUrl>
     <Install>true</Install>
@@ -42,6 +42,7 @@
     <IsWebBootstrapper>true</IsWebBootstrapper>
     <UseApplicationTrust>false</UseApplicationTrust>
     <BootstrapperEnabled>true</BootstrapperEnabled>
+    <TargetFrameworkVersion>v3.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <OutputPath>bin\Debug\</OutputPath>
@@ -93,6 +94,9 @@
     <Reference Include="System">
       <Name>System</Name>
     </Reference>
+    <Reference Include="System.Core">
+      <RequiredTargetFramework>3.5</RequiredTargetFramework>
+    </Reference>
     <Reference Include="System.Data">
       <Name>System.Data</Name>
     </Reference>
@@ -114,14 +118,17 @@
     <Compile Include="Entities\CacheOption.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Entities\ReportCredential.cs" />
     <Compile Include="Entities\DataSource.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Entities\DBExecution.cs">
+    <Compile Include="Entities\DbExecution.cs">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Entities\GlobalVariableDictionary.cs" />
     <Compile Include="Entities\Report.cs">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Entities\ReportCredential.cs">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Entities\ReportGroup.cs">
@@ -130,7 +137,7 @@
     <Compile Include="Entities\ReportServerInfo.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="IWSWrapper.cs" />
+    <Compile Include="IWsWrapper.cs" />
     <Compile Include="Logger.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -348,12 +355,12 @@
     <Compile Include="Tasks\Task.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Utilities\Util.cs">
+    <Compile Include="Utilities\PathUtil.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="WSWrapper2003.cs">
+    <Compile Include="WsWrapper2003.cs">
     </Compile>
-    <Compile Include="WSWrapper2005.cs" />
+    <Compile Include="WsWrapper2005.cs" />
     <None Include="..\RSBuild.snk">
       <Link>RSBuild.snk</Link>
     </None>

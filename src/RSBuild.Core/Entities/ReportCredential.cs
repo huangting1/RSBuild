@@ -1,4 +1,4 @@
-namespace RSBuild
+namespace RSBuild.Entities
 {
     public enum ReportCredential
     {

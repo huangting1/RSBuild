@@ -1,6 +1,7 @@
-namespace RSBuild
+namespace RSBuild.Entities
 {
     using System;
+    using System.Collections.Generic;
 
     /// <summary>
 	/// Represents a report group.
@@ -8,11 +9,11 @@ namespace RSBuild
 	[Serializable]
 	public class ReportGroup
 	{
-		private string _Name;
-		private string _TargetFolder;
-		private DataSource _DataSource;
-		private ReportServerInfo _ReportServer;
-		private Report[] _Reports;
+        private readonly string _name;
+        private readonly string _targetFolder;
+        private readonly DataSource _dataSource;
+        private readonly ReportServerInfo _reportServer;
+        private readonly IList<Report> _reports;
 
         /// <summary>
         /// Gets the name.
@@ -20,10 +21,7 @@ namespace RSBuild
         /// <value>The name.</value>
 		public string Name
 		{
-			get
-			{
-				return _Name;
-			}
+			get { return _name; }
 		}
 
         /// <summary>
@@ -32,10 +30,7 @@ namespace RSBuild
         /// <value>The target folder.</value>
 		public string TargetFolder
 		{
-			get
-			{
-				return _TargetFolder;
-			}
+			get { return _targetFolder; }
 		}
 
         /// <summary>
@@ -44,10 +39,7 @@ namespace RSBuild
         /// <value>The data source.</value>
 		public DataSource DataSource
 		{
-			get
-			{
-				return _DataSource;
-			}
+			get { return _dataSource; }
 		}
 
         /// <summary>
@@ -56,22 +48,16 @@ namespace RSBuild
         /// <value>The report server.</value>
 		public ReportServerInfo ReportServer
 		{
-			get
-			{
-				return _ReportServer;
-			}
+			get { return _reportServer; }
 		}
 
         /// <summary>
         /// Gets the reports.
         /// </summary>
         /// <value>The reports.</value>
-		public Report[] Reports
+		public IList<Report> Reports
 		{
-			get
-			{
-				return _Reports;
-			}
+			get { return _reports; }
 		}
 
         /// <summary>
@@ -82,22 +68,23 @@ namespace RSBuild
         /// <param name="dataSource">The data source.</param>
         /// <param name="reportServer">The report server.</param>
         /// <param name="reports">The reports.</param>
-		public ReportGroup(string name, string targetFolder, DataSource dataSource, ReportServerInfo reportServer, Report[] reports)
+		public ReportGroup(string name, string targetFolder, DataSource dataSource, ReportServerInfo reportServer, IEnumerable<Report> reports)
 		{
-			_Name = name;
-			_TargetFolder = targetFolder;
-            _DataSource = dataSource;
-            _ReportServer = reportServer;
+			_name = name;
+			_targetFolder = targetFolder;
+            _dataSource = dataSource;
+            _reportServer = reportServer;
 
-			if (targetFolder != null && targetFolder.Length > 0)
+			if (!string.IsNullOrEmpty(targetFolder))
 			{
-				_TargetFolder = targetFolder.Trim();
+				_targetFolder = targetFolder.Trim();
 			}
-			if (reports != null && reports.Length > 0)
-			{
-				_Reports = reports;
-			}
-
+			
+            _reports = new List<Report>(reports).AsReadOnly();
+            foreach (Report report in _reports)
+            {
+                report.SetDataSourceReference(dataSource);
+            }
 		}
 	}
 }

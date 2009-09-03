@@ -1,15 +1,14 @@
 namespace RSBuild
 {
     using System;
-    using System.Collections;
-    using System.Collections.Specialized;
+    using System.Collections.Generic;
     using System.Globalization;
     using System.IO;
     using System.Reflection;
     using System.Text;
-    using System.Text.RegularExpressions;
     using System.Xml;
     using System.Xml.Schema;
+    using RSBuild.Entities;
 
     /// <summary>
     /// The config settings.
@@ -17,8 +16,6 @@ namespace RSBuild
     public sealed class Settings
     {
         #region Static fields/properties
-
-        private readonly Regex GlobalsRegex = new Regex(@"(?<g>\${(?<k>[^}]+)})", RegexOptions.Compiled | RegexOptions.IgnoreCase);
 
         public static Assembly DefaultAssembly
         {
@@ -57,12 +54,12 @@ namespace RSBuild
 
         private readonly string _settingsDir;
         
-        private Hashtable _reportServers;
-        private Hashtable _dataSources;
-        private ReportGroup[] _reportGroups;
-        private DBExecution[] _dbExecutions;
-        private StringDictionary _dbConnections;
-        private StringDictionary _globalVariables;
+        private readonly IDictionary<string, ReportServerInfo> _reportServers = new Dictionary<string, ReportServerInfo>();
+        private readonly IDictionary<string, DataSource> _dataSources = new Dictionary<string, DataSource>();
+        private readonly IList<ReportGroup> _reportGroups = new List<ReportGroup>();
+        private readonly IList<DbExecution> _dbExecutions = new List<DbExecution>();
+        private readonly IDictionary<string, string> _dbConnections = new Dictionary<string, string>();
+        private readonly GlobalVariableDictionary _globalVariables = new GlobalVariableDictionary();
 
         #endregion
 
@@ -97,12 +94,12 @@ namespace RSBuild
             }
         }
 
-        private XmlDocument LoadSettings(string settingsFilePath)
+        private static XmlDocument LoadSettings(string settingsFilePath)
         {
-            XmlSchemaSet xmlSchemas = new XmlSchemaSet { };
+            XmlSchemaSet xmlSchemas = new XmlSchemaSet();
             xmlSchemas.Add(LoadSettingsSchema());
 
-            XmlReaderSettings xmlReaderSettings = new XmlReaderSettings()
+            XmlReaderSettings xmlReaderSettings = new XmlReaderSettings
             {
                 CloseInput = true,
                 ConformanceLevel = ConformanceLevel.Document,
@@ -145,34 +142,24 @@ namespace RSBuild
         private void ReadSettings(XmlDocument d)
         {
             // Globals
-            XmlNodeList list5 = d.SelectNodes("//Settings/Globals/Global");
-            _globalVariables = new StringDictionary();
-
-            if (list5 != null)
+            XmlNodeList globalVariableNodes = d.SelectNodes("//Settings/Globals/Global");
+            if (globalVariableNodes != null)
             {
-                foreach (XmlNode node in list5)
+                foreach (XmlNode node in globalVariableNodes)
                 {
                     XmlNode key = node.Attributes["Name"];
                     if (key != null)
                     {
-                        if (_globalVariables.ContainsKey(key.Value))
-                        {
-                            _globalVariables[key.Value] = node.InnerText;
-                        }
-                        else
-                        {
-                            _globalVariables.Add(key.Value, node.InnerText);
-                        }
+                        _globalVariables[key.Value] = node.InnerText;
                     }
                 }
             }
 
             // ReportServers
-            XmlNodeList list6 = d.SelectNodes("//Settings/ReportServers/ReportServer");
-            if (list6 != null)
+            XmlNodeList reportServerNodes = d.SelectNodes("//Settings/ReportServers/ReportServer");
+            if (reportServerNodes != null)
             {
-                _reportServers = new Hashtable();
-                foreach (XmlNode node in list6)
+                foreach (XmlNode node in reportServerNodes)
                 {
                     XmlNode n0 = node.Attributes["Name"];
                     if (n0 != null)
@@ -202,27 +189,17 @@ namespace RSBuild
                                 ? ProcessGlobals(rsPassword.Value)
                                 : null;
 
-                            ReportServerInfo rsInfo = new ReportServerInfo(name, protocol, ProcessGlobals(rsHost.Value), ProcessGlobals(rsPath.Value), timeout, userName, password);
-                            if (_reportServers.ContainsKey(name))
-                            {
-                                _reportServers[name] = rsInfo;
-                            }
-                            else
-                            {
-                                _reportServers.Add(name, rsInfo);
-                            }
+                            _reportServers[name] = new ReportServerInfo(name, protocol, ProcessGlobals(rsHost.Value), ProcessGlobals(rsPath.Value), timeout, userName, password);
                         }
                     }
                 }
             }
 
             // DataSources
-            XmlNodeList list1 = d.SelectNodes("//Settings/DataSources/DataSource");
-            if (list1 != null)
+            XmlNodeList dataSourceNodes = d.SelectNodes("//Settings/DataSources/DataSource");
+            if (dataSourceNodes != null)
             {
-                _dataSources = new Hashtable();
-                _dbConnections = new StringDictionary();
-                foreach (XmlNode node in list1)
+                foreach (XmlNode node in dataSourceNodes)
                 {
                     XmlNode nameAttribute = node.Attributes["Name"];
                     if (nameAttribute != null)
@@ -264,14 +241,14 @@ namespace RSBuild
                             && Convert.ToBoolean(windowsCredentialsElement.Value, CultureInfo.InvariantCulture);
 
                         string targetFolder = targetFolderElement != null
-                            ? ProcessGlobals(targetFolderElement.Value)
+                            ? PathUtil.FormatPath(ProcessGlobals(targetFolderElement.Value))
                             : null;
                         string reportServer = reportServerAttribute != null
                             ? ProcessGlobals(reportServerAttribute.Value)
                             : null;
 
                         ReportServerInfo reportServerInfo = reportServer != null && ReportServers.ContainsKey(reportServer)
-                            ? (ReportServerInfo)ReportServers[reportServer]
+                            ? ReportServers[reportServer]
                             : null;
                         DataSource dataSource = new DataSource(name, 
                             userName, password, credentialRetrieval, windowsCredentials, 
@@ -289,20 +266,11 @@ namespace RSBuild
             }
 
             // Reports
-            XmlNodeList list7 = d.SelectNodes("//Settings/Reports/ReportGroup");
-            int k = 0;
-            if (list7 != null)
+            XmlNodeList reportGroupNodes = d.SelectNodes("//Settings/Reports/ReportGroup");
+            if (reportGroupNodes != null)
             {
-                _reportGroups = new ReportGroup[list7.Count];
-                foreach (XmlNode node in list7)
+                foreach (XmlNode node in reportGroupNodes)
                 {
-                    string rgName = null;
-                    string targetFolder = null;
-                    string dataSourceName = null;
-                    string reportServer = null;
-                    int cacheTime = -1;
-                    Report[] reports = null;
-
                     XmlNode n1 = node.Attributes["Name"];
                     XmlNode n2 = node.Attributes["DataSourceName"];
                     XmlNode n3 = node.Attributes["TargetFolder"];
@@ -310,9 +278,12 @@ namespace RSBuild
                     XmlNode n14 = node.Attributes["CacheTime"];
                     if (n2 != null && n3 != null && n4 != null)
                     {
-                        dataSourceName = ProcessGlobals(n2.Value);
-                        targetFolder = ProcessGlobals(n3.Value);
-                        reportServer = ProcessGlobals(n4.Value);
+                        string rgName = null;
+                        string dataSourceName = ProcessGlobals(n2.Value);
+                        string targetFolder = PathUtil.FormatPath(ProcessGlobals(n3.Value));
+                        string reportServer = ProcessGlobals(n4.Value);
+                        int cacheTime = -1;
+
                         if (n1 != null)
                         {
                             rgName = ProcessGlobals(n1.Value);
@@ -322,109 +293,118 @@ namespace RSBuild
                             cacheTime = int.Parse(ProcessGlobals(n14.Value));
                         }
 
-                        XmlNodeList list2 = node.SelectNodes("Report");
-                        int i = 0;
-                        if (list2 != null)
-                        {
-                            reports = new Report[list2.Count];
-                            foreach (XmlNode node1 in list2)
-                            {
-                                string rpName = null;
-                                string collapsedHeight = null;
-                                int reportCacheTime = cacheTime;
-                                XmlNode n11 = node1.SelectSingleNode("FilePath");
-
-                                if (n11 != null)
-                                {
-                                    XmlNode n12 = node1.Attributes["Name"];
-                                    XmlNode n13 = node1.Attributes["CollapsedHeight"];
-                                    XmlNode n15 = node1.Attributes["CacheTime"];
-                                    if (n12 != null)
-                                    {
-                                        rpName = ProcessGlobals(n12.Value);
-                                    }
-                                    if (n13 != null)
-                                    {
-                                        collapsedHeight = ProcessGlobals(n13.Value);
-                                    }
-                                    if (n15 != null)
-                                    {
-                                        reportCacheTime = int.Parse(ProcessGlobals(n15.Value));
-                                    }
-
-                                    reports[i] = new Report(rpName, GetFilePath(n11.InnerText), collapsedHeight, reportCacheTime);
-                                }
-
-                                i++;
-                            }
-                        }
-
-                        _reportGroups[k] = CreateReportGroup(rgName, targetFolder, dataSourceName, reportServer, reports);
+                        _reportGroups.Add(
+                            CreateReportGroup(rgName, targetFolder, dataSourceName, reportServer, 
+                                SelectReports(node, targetFolder, cacheTime)));
                     }
-                    k++;
                 }
             }
 
             // Executions
-            XmlNodeList list3 = d.SelectNodes("//Settings/DBExecutions/DBExecution");
-            int j = 0;
-            if (list3 != null)
+            XmlNodeList dbExecutionNodes = d.SelectNodes("//Settings/DBExecutions/DBExecution");
+            if (dbExecutionNodes != null)
             {
-                _dbExecutions = new DBExecution[list3.Count];
-                foreach (XmlNode node in list3)
+                foreach (XmlNode node in dbExecutionNodes)
                 {
                     XmlNode dataSourceName = node.Attributes["DataSourceName"];
 
                     if (dataSourceName != null)
                     {
-                        StringCollection files = null;
-                        XmlNodeList list4 = node.SelectNodes("DBFilePath");
-                        if (list4 != null)
-                        {
-                            files = new StringCollection();
-                            foreach (XmlNode node1 in list4)
-                            {
-                                files.Add(ProcessGlobals(node1.InnerText));
-                            }
-                        }
-
-                        _dbExecutions[j] = CreateDbExecution(ProcessGlobals(dataSourceName.Value), files);
+                        _dbExecutions.Add(CreateDbExecution(
+                            ProcessGlobals(dataSourceName.Value), 
+                            SelectDbFilePaths(node)));
                     }
-
-                    j++;
                 }
             }
         }
 
-        private ReportGroup CreateReportGroup(string name, string targetFolder, string dataSourceName, string reportServer, Report[] reports)
+        private string ProcessGlobals(string input)
+        {
+            return _globalVariables.ReplaceVariables(input);
+        }
+
+        private ReportGroup CreateReportGroup(string name, string targetFolder, string dataSourceName, string reportServer, IEnumerable<Report> reports)
         {
             DataSource dataSource = dataSourceName != null && DataSources.ContainsKey(dataSourceName)
-                ? (DataSource)DataSources[dataSourceName]
+                ? DataSources[dataSourceName]
                 : null;
             ReportServerInfo reportServerInfo = reportServer != null && ReportServers.ContainsKey(reportServer)
-                ? (ReportServerInfo)ReportServers[reportServer]
+                ? ReportServers[reportServer]
                 : null;
 
             return new ReportGroup(name, targetFolder, dataSource, reportServerInfo, reports);
         }
 
-        private DBExecution CreateDbExecution(string dataSourceName, StringCollection files)
+        private IEnumerable<Report> SelectReports(XmlNode reportGroupNode, string targetFolder, int defaultCacheTime)
         {
-            DataSource dataSource = dataSourceName != null && DataSources.ContainsKey(dataSourceName)
-                ? (DataSource) DataSources[dataSourceName]
-                : null;
-
-            StringCollection filePaths = null;
-            if (files != null)
+            XmlNodeList reportNodes = reportGroupNode.SelectNodes("Report");
+            if (reportNodes != null)
             {
-                filePaths = new StringCollection();
-                foreach (string file in files)
+                foreach (XmlNode reportNode in reportNodes)
                 {
-                    filePaths.Add(GetFilePath(file.Trim()));
+                    string rpName = null;
+                    string collapsedHeight = null;
+                    int reportCacheTime = defaultCacheTime;
+                    XmlNode filePathNode = reportNode.SelectSingleNode("FilePath");
+
+                    if (filePathNode != null)
+                    {
+                        XmlNode nameNode = reportNode.Attributes["Name"];
+                        XmlNode collapsedHeightNode = reportNode.Attributes["CollapsedHeight"];
+                        XmlNode cacheTimeNode = reportNode.Attributes["CacheTime"];
+                        if (nameNode != null)
+                        {
+                            rpName = ProcessGlobals(nameNode.Value);
+                        }
+                        if (collapsedHeightNode != null)
+                        {
+                            collapsedHeight = ProcessGlobals(collapsedHeightNode.Value);
+                        }
+                        if (cacheTimeNode != null)
+                        {
+                            reportCacheTime = int.Parse(ProcessGlobals(cacheTimeNode.Value));
+                        }
+
+                        yield return new Report(rpName, targetFolder, LoadReportDefinition(filePathNode.InnerText))
+                        {
+                            BodyHeight = collapsedHeight,
+                            CacheOption = reportCacheTime > 0
+                                ? new CacheOption(reportCacheTime)
+                                : null
+                        };
+                    }
                 }
             }
+        }
 
-            return new DBExecution(dataSource, filePaths);
+        private XmlReader LoadReportDefinition(string reportFilePath)
+        {
+            using (StreamReader reader = File.OpenText(reportFilePath))
+            {
+                string reportDefinition = _globalVariables.ReplaceVariables(reader.ReadToEnd());
+                return XmlReader.Create(new StringReader(reportDefinition));
+            }
+        }
+
+        private DbExecution CreateDbExecution(string dataSourceName, IEnumerable<string> filePaths)
+        {
+            DataSource dataSource = dataSourceName != null && DataSources.ContainsKey(dataSourceName)
+                ? DataSources[dataSourceName]
+                : null;
+            return new DbExecution(dataSource, filePaths);
+        }
+
+        private IEnumerable<string> SelectDbFilePaths(XmlNode dbExecutionElement)
+        {
+            XmlNodeList dbFilePathNodes = dbExecutionElement.SelectNodes("DBFilePath");
+            if (dbFilePathNodes != null)
+            {
+                foreach (XmlNode dbFilePathNode in dbFilePathNodes)
+                {
+                    string dbFilePath = ProcessGlobals(dbFilePathNode.InnerText);
+                    yield return GetFilePath(dbFilePath.Trim());
+                }
+            }
         }
 
         #endregion
@@ -435,7 +415,7 @@ namespace RSBuild
         /// Gets the data sources.
         /// </summary>
         /// <value>The data sources.</value>
-        public Hashtable DataSources
+        public IDictionary<string, DataSource> DataSources
         {
             get { return _dataSources; }
         }
@@ -444,7 +424,7 @@ namespace RSBuild
         /// Gets the report groups.
         /// </summary>
         /// <value>The report groups.</value>
-        public ReportGroup[] ReportGroups
+        public IList<ReportGroup> ReportGroups
         {
             get { return _reportGroups; }
         }
@@ -453,7 +433,7 @@ namespace RSBuild
         /// Gets the DB executions.
         /// </summary>
         /// <value>The DB executions.</value>
-        public DBExecution[] DBExecutions
+        public IList<DbExecution> DbExecutions
         {
             get { return _dbExecutions; }
         }
@@ -462,7 +442,7 @@ namespace RSBuild
         /// Gets the DB connections.
         /// </summary>
         /// <value>The DB connections.</value>
-        public StringDictionary DBConnections
+        public IDictionary<string, string> DbConnections
         {
             get { return _dbConnections; }
         }
@@ -471,7 +451,7 @@ namespace RSBuild
         /// Gets the global variables.
         /// </summary>
         /// <value>The global variables.</value>
-        public StringDictionary GlobalVariables
+        public GlobalVariableDictionary GlobalVariables
         {
             get { return _globalVariables; }
         }
@@ -480,7 +460,7 @@ namespace RSBuild
         /// Gets the report servers.
         /// </summary>
         /// <value>The report servers.</value>
-        public Hashtable ReportServers
+        public IDictionary<string, ReportServerInfo> ReportServers
         {
             get { return _reportServers; }
         }
@@ -497,29 +477,6 @@ namespace RSBuild
         }
 
         /// <summary>
-        /// Processes the globals.
-        /// </summary>
-        /// <param name="input">The input.</param>
-        /// <returns></returns>
-        public string ProcessGlobals(string input)
-        {
-            return GlobalsRegex.Replace(input, new MatchEvaluator(ReplaceMatches));
-        }
-
-        private string ReplaceMatches(Match match)
-        {
-            string key = match.Groups["k"].ToString();
-            string toReplace = match.Groups["g"].ToString();
-            string output = toReplace;
-            if (_globalVariables.ContainsKey(key))
-            {
-                output = _globalVariables[key];
-            }
-
-            return output;
-        }
-
-        /// <summary>
         /// Gets the logo banner.
         /// </summary>
         /// <value>The logo banner.</value>
@@ -528,7 +485,6 @@ namespace RSBuild
             get
             {
                 string productName;
-                Version assemblyVersion;
                 string copyrightInformation = null;
                 string companyInformation = null;
 
@@ -547,7 +503,7 @@ namespace RSBuild
                 }
 
                 // get assembly version 
-                assemblyVersion = assembly.GetName().Version;
+                Version assemblyVersion = assembly.GetName().Version;
 
                 // get copyright information
                 object[] copyrightAttributes = assembly.GetCustomAttributes(typeof(AssemblyCopyrightAttribute), false);
