@@ -363,7 +363,7 @@
     <None Include="..\RSBuild.snk">
       <Link>RSBuild.snk</Link>
     </None>
-    <Compile Include="IWSWrapper.cs" />
+    <Compile Include="IWsWrapper.cs" />
     <None Include="ReportingServices\vssver.scc" />
     <EmbeddedResource Include="RSBuild.xsd" />
   </ItemGroup>
@@ -395,7 +395,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\..\lib\linqtoxsd\LinqToXsd.targets" />
   <PropertyGroup>
     <PreBuildEvent>
     </PreBuildEvent>
