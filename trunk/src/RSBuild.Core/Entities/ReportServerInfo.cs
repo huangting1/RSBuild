@@ -1,21 +1,21 @@
-using System;
-using System.Net;
-
-namespace RSBuild
+namespace RSBuild.Entities
 {
-	/// <summary>
+    using System;
+    using System.Net;
+
+    /// <summary>
 	/// Represents info about the report server.
 	/// </summary>
 	[Serializable]
 	public class ReportServerInfo
 	{
-		private string _Name;
-		private string _Protocol;
-		private string _Host;
-		private string _Path;
-		private int? _Timeout;
-		private string _UserName;
-		private string _Password;
+		private readonly string _name;
+        private readonly string _protocol;
+        private readonly string _host;
+        private readonly string _path;
+        private readonly int? _timeout;
+        private readonly string _userName;
+        private readonly string _password;
 
         /// <summary>
         /// Gets the name.
@@ -23,10 +23,7 @@ namespace RSBuild
         /// <value>The name.</value>
 		public string Name
 		{
-			get
-			{
-				return _Name;
-			}
+			get { return _name; }
 		}
 
         /// <summary>
@@ -35,10 +32,7 @@ namespace RSBuild
         /// <value>The protocol.</value>
 		public string Protocol
 		{
-			get
-			{
-				return _Protocol;
-			}
+			get { return _protocol; }
 		}
 
         /// <summary>
@@ -47,22 +41,16 @@ namespace RSBuild
         /// <value>The host.</value>
 		public string Host
 		{
-			get
-			{
-				return _Host;
-			}
+			get { return _host; }
 		}
 
         /// <summary>
         /// Gets the path.
         /// </summary>
         /// <value>The path.</value>
-		public string Path
-		{
-			get
-			{
-				return _Path;
-			}
+		public string Path 
+        {
+			get { return _path; }
 		}
 
         /// <summary>
@@ -71,10 +59,7 @@ namespace RSBuild
         /// <value>The timeout.</value>
 		public int? Timeout
 		{
-			get
-			{
-				return _Timeout;
-			}
+			get { return _timeout; }
 		}
 
         /// <summary>
@@ -83,10 +68,7 @@ namespace RSBuild
         /// <value>The user name.</value>
 		public string UserName
 		{
-			get
-			{
-				return _UserName;
-			}
+			get { return _userName; }
 		}
 
         /// <summary>
@@ -95,10 +77,7 @@ namespace RSBuild
         /// <value>The password.</value>
 		public string Password
 		{
-			get
-			{
-				return _Password;
-			}
+			get { return _password; }
 		}
 
         /// <summary>
@@ -107,10 +86,7 @@ namespace RSBuild
         /// <value>The service URL.</value>
         public string ServiceBaseUrl
         {
-            get
-            {
-                return string.Format("{0}://{1}/{2}/", this.Protocol, this.Host, this.Path);
-            }
+            get { return string.Format("{0}://{1}/{2}/", this.Protocol, this.Host, this.Path); }
         }
 
         /// <summary>
@@ -134,20 +110,20 @@ namespace RSBuild
         /// <param name="password">The password.</param>
 		public ReportServerInfo(string name, string protocol, string host, string path, string timeout, string userName, string password)
 		{
-			_Name = name;
-			_Protocol = protocol;
-			_Host = host;
-			_Path = path;
-			_UserName = userName;
-			_Password = password;
+			_name = name;
+			_protocol = protocol;
+			_host = host;
+			_path = path;
+			_userName = userName;
+			_password = password;
 			try
 			{
-				_Timeout = string.IsNullOrEmpty(timeout) 
+				_timeout = string.IsNullOrEmpty(timeout) 
                     ? default(int?)
                     : Convert.ToInt32(timeout, 10) * 0x3e8;
-				if (_Timeout.Value < 0)
+				if (_timeout.HasValue && _timeout.Value < 0)
 				{
-					throw new Exception("Invalid timeout value");
+					throw new ArgumentException("Timeout must be greater than or equal to zero");
 				}
 			}
 			catch (Exception e)

@@ -1,6 +1,8 @@
 namespace RSBuild
 {
-	/// <summary>
+    using RSBuild.Tasks;
+    
+    /// <summary>
 	/// Program dispatcher.
 	/// </summary>
 	public class Dispatcher
@@ -36,7 +38,7 @@ namespace RSBuild
 			// need refactoring
 			
 			LogSectionHeader("Database Installation");
-			DBTask dbTask = new DBTask(settings);
+			DbTask dbTask = new DbTask(settings);
 			if (dbTask.Validate())
 			{
 				dbTask.Execute();

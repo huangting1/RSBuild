@@ -1,4 +1,4 @@
-namespace RSBuild
+namespace RSBuild.Entities
 {
     using System;
     using System.Text;
@@ -11,17 +11,17 @@ namespace RSBuild
 	{
         public const string DefaultExtension = "SQL";
 
-        private string _extension;
-		private string _name;
-		private string _userName;
-		private string _password;
-		private string _connectionString;
-		private ReportCredential _credentialRetrieval;
-		private bool _windowsCredentials;
-		private bool _publish;
-		private bool _overwrite;
-		private string _targetFolder;
-		private ReportServerInfo _reportServer;
+        private readonly string _extension;
+        private readonly string _name;
+		private readonly string _userName;
+		private readonly string _password;
+		private readonly string _connectionString;
+		private readonly ReportCredential _credentialRetrieval;
+		private readonly bool _windowsCredentials;
+		private readonly bool _publish;
+		private readonly bool _overwrite;
+		private readonly string _targetFolder;
+		private readonly ReportServerInfo _reportServer;
 
         /// <summary>
         /// Gets the name.
@@ -125,6 +125,7 @@ namespace RSBuild
         /// <param name="userName">The user name.</param>
         /// <param name="password">The password.</param>
         /// <param name="credentialRetrieval">The credential retrieval enum.</param>
+        /// <param name="extension">The data source type.</param>
         /// <param name="windowsCredentials">if set to <c>true</c> [windows credentials].</param>
         /// <param name="connectionString">The connection string.</param>
         /// <param name="publish">if set to <c>true</c>, publish.</param>
@@ -184,9 +185,8 @@ namespace RSBuild
                 return false;
             }
 
-
             var sb = new StringBuilder(_connectionString);
-            if (sb.Length > 0 && sb[sb.Length] == SEPARATOR)
+            if (sb.Length > 0 && sb[sb.Length - 1] == SEPARATOR)
             {
                 sb.Length -= 1;
             }

@@ -1,24 +1,29 @@
-using System;
-using System.Collections.Specialized;
-using System.Data.SqlClient;
-using System.IO;
-using System.Text;
-
-namespace RSBuild
+namespace RSBuild.Tasks
 {
-	/// <summary>
+    using System;
+    using System.Collections.Generic;
+    using System.Data.SqlClient;
+    using System.IO;
+    using System.Text;
+    using RSBuild.Entities;
+
+    /// <summary>
 	/// Represents a database task.
 	/// </summary>
-	public class DBTask : Task
+	public class DbTask : Task
 	{
-	    private readonly Settings Settings;
+        private readonly GlobalVariableDictionary _globalVariables;
+        private readonly IList<DbExecution> _dbExecutions;
+        private readonly IDictionary<string, string> _dbConnections;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="DBTask"/> class.
+        /// Initializes a new instance of the <see cref="DbTask"/> class.
         /// </summary>
-		public DBTask(Settings settings)
+		public DbTask(Settings settings)
         {
-            this.Settings = settings;
+            _globalVariables = settings.GlobalVariables;
+            _dbExecutions = new List<DbExecution>(settings.DbExecutions);
+            _dbConnections = new Dictionary<string, string>(settings.DbConnections);
         }
 
         /// <summary>
@@ -26,24 +31,19 @@ namespace RSBuild
         /// </summary>
 		public override void Execute()
 		{
-			DBExecution[] executions = Settings.DBExecutions;
-			StringDictionary connections = Settings.DBConnections;
-			if (executions != null && executions.Length > 0)
+			foreach(DbExecution execution in _dbExecutions)
 			{
-				foreach(DBExecution execution in executions)
+				if (execution != null && execution.DataSource != null)
 				{
-					if (execution != null && execution.DataSource != null)
+					string connection = _dbConnections[execution.DataSource.Name];
+					if (connection != null)
 					{
-						string connection = connections[execution.DataSource.Name];
-						if (connection != null)
-						{
-							Logger.LogMessage(string.Format("\nConnecting to data source: {0}", execution.DataSource.Name));
+						Logger.LogMessage(string.Format("\nConnecting to data source: {0}", execution.DataSource.Name));
 
-							foreach(string filePath in execution.FilePaths)
-							{
-								Logger.LogMessage(string.Format("Executing file: {0}", Path.GetFileName(filePath)));
-								ExecuteFile(filePath, connection);
-							}
+						foreach(string filePath in execution.FilePaths)
+						{
+							Logger.LogMessage(string.Format("Executing file: {0}", Path.GetFileName(filePath)));
+							ExecuteFile(filePath, connection);
 						}
 					}
 				}
@@ -66,46 +66,37 @@ namespace RSBuild
         /// <param name="connectionString">The connection string.</param>
         private void ExecuteFile(string filePath, string connectionString)
         {
-            SqlConnection connection = null;
+            if (!File.Exists(filePath))
+            {
+                throw new Exception(string.Format("File [{0}] does not exists", filePath));
+            }
 
             try
             {
-                StreamReader reader = null;
-                string sql = string.Empty;
+                using (Stream stream = File.OpenRead(filePath))
+                using (StreamReader reader = new StreamReader(stream))
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                using (SqlCommand command = new SqlCommand())
+                {
+                    connection.Open();
+                    command.Connection = connection;
+                    command.CommandType = System.Data.CommandType.Text;
 
-                if (false == System.IO.File.Exists(filePath))
-                {
-                    throw new Exception(string.Format("File [{0}] does not exists", filePath));
-                }
-                else
-                {
-                    using (Stream stream = System.IO.File.OpenRead(filePath))
+                    string sql = ReadNextStatementFromStream(reader);
+                    while (sql != null)
                     {
-                        reader = new StreamReader(stream);
-                        connection = new SqlConnection(connectionString);
-                        SqlCommand command = new SqlCommand();
-                        connection.Open();
-                        command.Connection = connection;
-                        command.CommandType = System.Data.CommandType.Text;
-
-                        while (null != (sql = ReadNextStatementFromStream(reader)))
-                        {
-                            command.CommandText = Settings.ProcessGlobals(sql);
-                            command.ExecuteNonQuery();
-                        }
-
-                        reader.Close();
+                        command.CommandText = _globalVariables.ReplaceVariables(sql);
+                        command.ExecuteNonQuery();
+                        sql = ReadNextStatementFromStream(reader);
                     }
+
+                    connection.Close();
+                    reader.Close();
                 }
             }
             catch (Exception ex)
             {
                 Logger.LogException("DBHelper::ExecuteFile", ex.Message);
-            }
-
-            if (connection != null)
-            {
-                connection.Close();
             }
         }
 
@@ -114,42 +105,28 @@ namespace RSBuild
         /// </summary>
         /// <param name="reader">The reader.</param>
         /// <returns></returns>
-        private string ReadNextStatementFromStream(StreamReader reader)
+        private static string ReadNextStatementFromStream(StreamReader reader)
         {
-            try
+            StringBuilder sb = new StringBuilder();
+            while (true)
             {
-                StringBuilder sb = new StringBuilder();
-                string lineOfText;
-
-                while (true)
+                string lineOfText = reader.ReadLine();
+                if (lineOfText == null)
                 {
-                    lineOfText = reader.ReadLine();
-                    if (lineOfText == null)
-                    {
-                        if (sb.Length > 0)
-                        {
-                            return sb.ToString();
-                        }
-                        else
-                        {
-                            return null;
-                        }
-                    }
-
-                    if (lineOfText.TrimEnd().ToUpper() == "GO")
-                    {
-                        break;
-                    }
-
-                    sb.Append(lineOfText + Environment.NewLine);
+                    return sb.Length > 0
+                        ? sb.ToString()
+                        : null;
                 }
 
-                return sb.ToString();
+                if (lineOfText.Trim().Equals("GO", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    break;
+                }
+
+                sb.AppendLine(lineOfText);
             }
-            catch (Exception)
-            {
-                return null;
-            }
+
+            return sb.ToString();
         }
     }
 }
