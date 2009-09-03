@@ -1,29 +1,30 @@
 namespace RSBuild
 {
-	using System;
-    using Microsoft.SqlServer.ReportingServices;
+    using System;
+    using RSBuild.Entities;
+    using RS = Microsoft.SqlServer.ReportingServices;
 
     /// <summary>
     /// Proxy wrapper.
     /// </summary>
-	public class WSWrapper2003 : IWSWrapper
+	public class WsWrapper2003 : IWsWrapper
 	{
         private const string SERVICE_NAME = "ReportService.asmx";
-        private ReportingService _proxy;
+        private RS.ReportingService _proxy;
 
 		// Methods
         /// <summary>
-        /// Initializes a new instance of the <see cref="WSWrapper"/> class.
+        /// Initializes a new instance of the <see cref="WsWrapper2003"/> class.
         /// </summary>
-        /// <param name="reportServer">The report server.</param>
-		private WSWrapper2003(ReportingService proxy)
+        /// <param name="proxy">The report server.</param>
+        private WsWrapper2003(RS.ReportingService proxy)
 		{
             _proxy = proxy;
 		}
 
-        public static bool TryCreate(ReportServerInfo reportServer, out IWSWrapper result, out Exception exception)
+        public static bool TryCreate(ReportServerInfo reportServer, out IWsWrapper result, out Exception exception)
         {
-            ReportingService proxy = new ReportingService()
+            RS.ReportingService proxy = new RS.ReportingService
             {
                 Url = reportServer.GetServiceUrl(SERVICE_NAME),
                 Timeout = reportServer.Timeout ?? -1,
@@ -33,7 +34,7 @@ namespace RSBuild
             try
             {
                 proxy.ListSecureMethods();
-                result = new WSWrapper2003(proxy);
+                result = new WsWrapper2003(proxy);
                 exception = null;
                 return true;
             }
@@ -51,43 +52,37 @@ namespace RSBuild
             _proxy.Dispose();
         }
 
-        public void CreateFolder(string Folder, string Parent)
+        public void CreateFolder(string folder, string parent)
         {
-            _proxy.CreateFolder(Folder, Parent, null);
+            _proxy.CreateFolder(folder, parent, null);
         }
 
         public void CreateDataSource(DataSource source)
         {
-            DataSourceDefinition definition = new DataSourceDefinition();
-            definition.Extension = source.Extension;
-            definition.ConnectString = source.ConnectionString;
-            definition.CredentialRetrieval = (CredentialRetrievalEnum)source.CredentialRetrieval;
+            RS.DataSourceDefinition definition = new RS.DataSourceDefinition
+            {
+                Extension = source.Extension,
+                ConnectString = source.ConnectionString,
+                CredentialRetrieval = (RS.CredentialRetrievalEnum)source.CredentialRetrieval,
+                Enabled = true,
+                EnabledSpecified = true,
+                ImpersonateUser = false,
+                ImpersonateUserSpecified = true,
+                Prompt = null,
+                WindowsCredentials = source.WindowsCredentials,
+            };
             if (source.UserName != null)
             {
                 definition.UserName = source.UserName;
                 definition.Password = source.Password;
             }
-            definition.Enabled = true;
-            definition.EnabledSpecified = true;
-            definition.Extension = "SQL";
-            definition.ImpersonateUser = false;
-            definition.ImpersonateUserSpecified = true;
-            definition.Prompt = null;
-            definition.WindowsCredentials = source.WindowsCredentials;
-
-            _proxy.CreateDataSource(
-                source.Name,
-                Util.FormatPath(source.TargetFolder),
-                source.Overwrite,
-                definition,
-                null);
         }
 
         public void CreateReport(Report report, string reportDir, byte[] reportDefinition)
         {
             if (reportDefinition == null) return;
 
-            Warning[] warnings = _proxy.CreateReport(report.Name, reportDir, true, reportDefinition, null);
+            RS.Warning[] warnings = _proxy.CreateReport(report.Name, reportDir, true, reportDefinition, null);
 
             if (warnings != null)
             {
@@ -109,7 +104,7 @@ namespace RSBuild
                 _proxy.SetCacheOptions(
                     string.Format("{0}/{1}", reportDir, report.Name),
                     true,
-                    new TimeExpiration() { Minutes = report.CacheOption.ExpirationMinutes.Value });
+                    new RS.TimeExpiration { Minutes = report.CacheOption.ExpirationMinutes.Value });
             }
         }
 	}
