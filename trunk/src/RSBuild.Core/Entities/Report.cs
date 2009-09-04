@@ -4,6 +4,7 @@ namespace RSBuild.Entities
     using System.Text.RegularExpressions;
     using System.Xml;
     using System.Xml.XPath;
+    using System.Collections.Generic;
 
     /// <summary>
 	/// Represents a report.
@@ -16,7 +17,8 @@ namespace RSBuild.Entities
 		private readonly string _name;
         private readonly string _targetFolder;
         private readonly XmlDocument _definitionDoc = new XmlDocument();
-        private readonly XmlNode _bodyHeightNode; 
+        private readonly XmlNode _bodyHeightNode;
+        private readonly IList<ReportDataSource> _dataSources;
         private readonly XmlNamespaceManager _xmlNamespaces;
         private CacheOption _cacheOption;
 
@@ -42,10 +44,11 @@ namespace RSBuild.Entities
             }
 
             _name = name;
-            _targetFolder = targetFolder;
+            _targetFolder = PathUtil.FormatPath(targetFolder);
             _definitionDoc.Load(definition);
             _xmlNamespaces = GetXmlNamespaceManager(_definitionDoc);
             _bodyHeightNode = _definitionDoc.SelectSingleNode("//def:Report/def:Body/def:Height", _xmlNamespaces);
+            _dataSources = new List<ReportDataSource>(GetDataSources()).AsReadOnly();
         }
 
         #endregion
@@ -111,31 +114,14 @@ namespace RSBuild.Entities
             get { return _definitionDoc.ToString(); }
         }
 
+        public IList<ReportDataSource> DataSources
+        {
+            get { return _dataSources; }
+        }
+
         #endregion
 
         #region Methods
-
-        /// <summary>
-        /// Sets first data source reference in report definition to the specified data source.
-        /// </summary>
-        /// <param name="dataSource">The data source.</param>
-        public void SetDataSourceReference(DataSource dataSource)
-        {
-            if (dataSource.Publish)
-            {
-                string newDataSourceNodeContent = string.Format(
-                    "<rd:DataSourceID>{0}</rd:DataSourceID><DataSourceReference>{1}{2}</DataSourceReference>",
-                    Guid.NewGuid(),
-                    PathUtil.GetRelativePath(_targetFolder, dataSource.TargetFolder),
-                    dataSource.Name);
-
-                XmlNode firstDataSourceNode = _definitionDoc.SelectSingleNode("//def:Report/def:DataSources/def:DataSource", _xmlNamespaces);
-                if (firstDataSourceNode != null)
-                {
-                    firstDataSourceNode.InnerXml = newDataSourceNodeContent;
-                }
-            }
-        }
 
         /// <summary>
         /// Creates a <see cref="XmlNamespaceManager"/> instance with all namespaces
@@ -165,6 +151,15 @@ namespace RSBuild.Entities
             return xnm;
         }
 
+        private IEnumerable<ReportDataSource> GetDataSources()
+        {
+            XmlNodeList dataSourceNodes = _definitionDoc.SelectNodes("//def:Report/def:DataSources/def:DataSource", _xmlNamespaces);
+            foreach (XmlElement dataSourceNode in dataSourceNodes)
+            {
+                yield return new ReportDataSource(this, dataSourceNode);
+            }
+        }
+
         /// <summary>
         /// Validates the distance.
         /// </summary>
@@ -177,5 +172,51 @@ namespace RSBuild.Entities
         }
 
         #endregion
+
+        public class ReportDataSource
+        {
+            private readonly Report _parent;
+            private readonly XmlElement _dataSourceNode;
+
+            public string Name { get; private set; }
+            public string DataSourceId { get; private set; }
+            public string DataSourceReference { get; private set; }
+
+            internal ReportDataSource(Report parent, XmlElement dataSourceNode)
+            {
+                _parent = parent;
+                _dataSourceNode = dataSourceNode;
+
+                this.Name = dataSourceNode.GetAttribute("Name");
+                XmlNode dataSourceIdNode = dataSourceNode.SelectSingleNode("/rd:DataSourceID", _parent._xmlNamespaces);
+                this.DataSourceId = dataSourceIdNode != null
+                    ? dataSourceIdNode.Value
+                    : null;
+                XmlNode dataSourceReferenceNode = dataSourceNode.SelectSingleNode("/def:DataSourceReference", _parent._xmlNamespaces);
+                this.DataSourceReference = dataSourceReferenceNode != null
+                    ? dataSourceReferenceNode.Value
+                    : null;
+            }
+
+            /// <summary>
+            /// Sets data source reference in report definition to the specified data source.
+            /// </summary>
+            /// <param name="dataSource">The data source.</param>
+            public void SetDataSourceReference(DataSource dataSource)
+            {
+                if (!dataSource.Publish)
+                {
+                    throw new InvalidOperationException("Cannot set reference to data source that will not be published.");
+                }
+
+                this.DataSourceId = Guid.NewGuid().ToString();
+                this.DataSourceReference = PathUtil.GetRelativePath(_parent._targetFolder, dataSource.TargetFolder) + dataSource.Name;
+
+                string newDataSourceNodeContent = string.Format(
+                    "<rd:DataSourceID>{0}</rd:DataSourceID><DataSourceReference>{1}</DataSourceReference>",
+                    this.DataSourceId, this.DataSourceReference);
+                _dataSourceNode.InnerXml = newDataSourceNodeContent;
+            }
+        }
     }
 }
