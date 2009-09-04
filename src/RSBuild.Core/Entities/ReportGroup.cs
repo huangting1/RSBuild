@@ -81,9 +81,15 @@ namespace RSBuild.Entities
 			}
 			
             _reports = new List<Report>(reports).AsReadOnly();
-            foreach (Report report in _reports)
+            if (dataSource.Publish)
             {
-                report.SetDataSourceReference(dataSource);
+                foreach (Report report in _reports)
+                {
+                    if (report.DataSources.Count > 0)
+                    {
+                        report.DataSources[0].SetDataSourceReference(dataSource);
+                    }
+                }
             }
 		}
 	}

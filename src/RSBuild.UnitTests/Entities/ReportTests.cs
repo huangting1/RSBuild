@@ -52,6 +52,32 @@
         }
 
         [Test]
+        public void TargetFolderNameIsCanonicalized()
+        {
+            const string NAME = "MyReport";
+            
+            string[] targetFolderNames = new[]
+            {
+                @"\My\Report\Dir",
+                @"\My\Report\Dir\",
+                @"My\Report\Dir\",
+                @"My\Report\Dir",
+                @"/My/Report/Dir",
+                @"/My/Report/Dir/",
+                @"My/Report/Dir/",
+                @"My/Report/Dir",
+                @"\My/Report/Dir",
+                @"/My/Report\Dir/",
+                @"My/Report/Dir\",
+            };
+
+            foreach (string targetFolderName in targetFolderNames)
+            {
+                Assert.That(CreateReport(NAME, targetFolderName).TargetFolder, Is.EqualTo(@"/My/Report/Dir"), targetFolderName);
+            }
+        }
+
+        [Test]
         public void ReportIsNotCacheableByDefault()
         {
             Assert.That(CreateReport().CacheOption, Is.Null);
@@ -88,15 +114,25 @@
         }
 
         [Test]
-        public void ReplaceSingleDataSourceInReportDefinition()
+        public void ModifyFirstDataSourceInReportDefinition()
         {
-            const string TARGET_FOLDER = @"/MyReports";
+            const string REPORT_NAME = "RPT1";
+            const string REPORT_TARGET_FOLDER = "/MySite/Reports";
+            const string DATA_SOURCE_NAME = @"DS1";
+            const string DATA_SOURCE_TARGET_FOLDER = @"/MySite/DataSources";
 
-            Report report = CreateReport();
+            Report report = CreateReport(REPORT_NAME, REPORT_TARGET_FOLDER);
             ReportServerInfo reportServerInfo = new ReportServerInfo("RS1", "http", "localhost", null, null, null, null);
-            DataSource dataSource = new DataSource("DS1", null, null, null, true, null, null, true, false, TARGET_FOLDER, reportServerInfo);
-            
-            report.SetDataSourceReference(dataSource);
+            DataSource dataSource = new DataSource(DATA_SOURCE_NAME, null, null, null, true, null, null, true, false, DATA_SOURCE_TARGET_FOLDER, reportServerInfo);
+
+            Report.ReportDataSource reportDataSource = report.DataSources[0];
+            string originalName = reportDataSource.Name;
+            string originalDataSourceId = reportDataSource.DataSourceId;
+
+            reportDataSource.SetDataSourceReference(dataSource);
+            Assert.That(reportDataSource.Name, Is.EqualTo(originalName), "Name");
+            Assert.That(reportDataSource.DataSourceId, Is.Not.EqualTo(originalDataSourceId), "DataSourceId");
+            Assert.That(reportDataSource.DataSourceReference, Is.EqualTo("../DataSources/DS1"), "DataSourceReference");
         }
 
         #endregion
