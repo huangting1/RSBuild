@@ -6,6 +6,8 @@
     using System.Xml;
     using System.Xml.Linq;
     using NUnit.Framework;
+    using RSBuild.Entities;
+    using RSBuild.UnitTests.Properties;
 
     [TestFixture]
     public class SettingsTests
@@ -77,7 +79,7 @@
             }
         }
 
-        private static XDocument CreateSettingsDocumentWithMultipleReportServers(
+        private XDocument CreateSettingsDocumentWithMultipleReportServers(
             string reportServerNamePrefix, int reportServerCount)
         {
             const string DS_NAME = "DS1";
@@ -122,7 +124,7 @@
             }
         }
 
-        private static XDocument CreateSettingsDocumentWithMultipleDataSources(
+        private XDocument CreateSettingsDocumentWithMultipleDataSources(
             string dataSourceNamePrefix, int dataSourceCount)
         {
             const string RS_NAME = "RS1";
@@ -167,7 +169,7 @@
             }
         }
 
-        private static XDocument CreateSettingsDocumentWithMultipleReportGroups(
+        private XDocument CreateSettingsDocumentWithMultipleReportGroups(
             string reportGroupNamePrefix, int reportGroupCount)
         {
             const string RS_NAME = "RS1";
@@ -179,6 +181,50 @@
                 CreateReportGroups(reportGroupNamePrefix, reportGroupCount, RS_NAME, DS_NAME));
         }
 
+        [Test]
+        public void LoadFailsIfNoReportSettings()
+        {
+            const int RPT_COUNT = 0;
+            const string RPT_NAME_PREFIX = "RPT";
+
+            XDocument settingsDocument = CreateSettingsDocumentWithMultipleReports(RPT_NAME_PREFIX, RPT_COUNT);
+            string settingsFilePath = CreateSettingsFile(settingsDocument);
+
+            Assert.Catch<XmlException>(() => Settings.Load(settingsFilePath));
+        }
+
+        [Test]
+        public void LoadMultipleReports()
+        {
+            const int RPT_COUNT = 3;
+            const string RPT_NAME_PREFIX = "RPT";
+
+            XDocument settingsDocument = CreateSettingsDocumentWithMultipleReports(RPT_NAME_PREFIX, RPT_COUNT);
+            string settingsFilePath = CreateSettingsFile(settingsDocument);
+
+            Settings settings = Settings.Load(settingsFilePath);
+            ReportGroup reportGroup = settings.ReportGroups[0];
+            Assert.That(reportGroup.Reports, Has.Count.EqualTo(RPT_COUNT));
+            for (int i = 0; i < RPT_COUNT; i++)
+            {
+                string reportName = RPT_NAME_PREFIX + i;
+                Assert.That(reportGroup.Reports.Count(g => g.Name == reportName), Is.EqualTo(1));
+            }
+        }
+
+        private XDocument CreateSettingsDocumentWithMultipleReports(
+            string reportNamePrefix, int reportCount)
+        {
+            const string RS_NAME = "RS1";
+            const string DS_NAME = "DS1";
+            const string RG_NAME = "RG1";
+
+            return CreateSettingsDocument(
+                CreateReportServer(RS_NAME),
+                CreateDataSource(DS_NAME, RS_NAME),
+                CreateReportGroup(RG_NAME, RS_NAME, DS_NAME, 
+                    CreateReports(reportNamePrefix, reportCount)));
+        }
 
         #endregion
 
@@ -235,7 +281,7 @@
                 );
         }
 
-        private static IEnumerable<XElement> CreateReportGroups(string namePrefix, int count, string reportServerName, string dataSourceName)
+        private IEnumerable<XElement> CreateReportGroups(string namePrefix, int count, string reportServerName, string dataSourceName)
         {
             const string RPT_NAME_PREFIX = "RPT";
 
@@ -248,15 +294,54 @@
             }
         }
 
-        private static XElement CreateReport(string name)
+        private XElement CreateReport(string name)
+        {
+            using (var reportContent = Resources.CompanySales2005)
+            {
+                return CreateReport(name, reportContent);
+            }
+        }
+
+        private XElement CreateReport(string name, Stream content)
         {
             return new XElement("Report",
                 new XAttribute("Name", name),
-                new XElement("FilePath")
+                new XElement("FilePath", CreateReportFile(name, content))
                 );
         }
 
-        private static XDocument CreateSettingsDocument()
+        private IEnumerable<XElement> CreateReports(string reportNamePrefix, int reportCount)
+        {
+            for (int i = 0; i < reportCount; i++)
+            {
+                string reportName = reportNamePrefix + i;
+                yield return CreateReport(reportName);
+            }
+        }
+
+        private string CreateReportFile(string reportName, Stream reportContent)
+        {
+            string reportFilePath = Path.Combine(
+                Path.GetTempPath(), 
+                Path.ChangeExtension(reportName, ".rpt"));
+            
+            using (var reportFile = File.Create(reportFilePath))
+            {
+                var chunk = new byte[4096];
+                var chunkSize = reportContent.Read(chunk, 0, chunk.Length);
+                while (chunkSize > 0)
+                {
+                    reportFile.Write(chunk, 0, chunkSize);
+                    chunkSize = reportContent.Read(chunk, 0, chunk.Length);
+                }
+                reportFile.Flush();
+            }
+
+            _tempFilePaths.Add(reportFilePath);
+            return reportFilePath;
+        }
+
+        private XDocument CreateSettingsDocument()
         {
             const string RS_NAME = "ReportServer1";
             const string DS_NAME = "DataSource1";

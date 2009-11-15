@@ -147,7 +147,7 @@
             return CreateReport(NAME, TARGET_FOLDER);
         }
 
-        private RSBuild.Entities.Report CreateReport(string name, string targetFolder)
+        private Report CreateReport(string name, string targetFolder)
         {
             using (XmlReader reportDefinition = XmlReader.Create(CreateReportDefinition()))
             {

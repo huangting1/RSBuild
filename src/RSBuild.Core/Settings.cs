@@ -365,13 +365,17 @@ namespace RSBuild
                             reportCacheTime = int.Parse(ProcessGlobals(cacheTimeNode.Value));
                         }
 
-                        yield return new Report(rpName, targetFolder, LoadReportDefinition(filePathNode.InnerText))
+                        var report = new Report(rpName, targetFolder, LoadReportDefinition(filePathNode.InnerText))
                         {
-                            BodyHeight = collapsedHeight,
                             CacheOption = reportCacheTime > 0
                                 ? new CacheOption(reportCacheTime)
                                 : null
                         };
+                        if (collapsedHeight != null)
+                        {
+                            report.BodyHeight = collapsedHeight;
+                        }
+                        yield return report;
                     }
                 }
             }
